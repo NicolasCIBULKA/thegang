@@ -96,7 +96,10 @@ function WaitingRoom({ matchData, matchID }) {
 
 // ---------- Plateau ----------
 
-export default function Board({ G, ctx, moves, playerID, matchData = [], matchID, isConnected }) {
+export default function Board(props) {
+  const { G, ctx, moves, playerID, matchID, isConnected } = props;
+  // En mode solo (sans serveur), boardgame.io ne fournit pas matchData : SoloMode passe soloPlayers.
+  const matchData = props.soloPlayers || props.matchData || [];
   const names = Object.fromEntries(matchData.map((p) => [String(p.id), p.name || `Joueur ${p.id + 1}`]));
   const allSeated = matchData.length > 0 && matchData.every((p) => p.name);
 

@@ -69,6 +69,19 @@ h1, h2, .brand { font-family: 'Bebas Neue', Impact, sans-serif; letter-spacing: 
 
 .error { color: var(--ko); }
 
+/* ---------- Mode solo ---------- */
+.solo-hint { margin-top: 28px; font-size: 14px; }
+.solo-hint a { color: var(--accent); }
+.solo-bar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 16px; background: #0d1014; border-bottom: 1px solid var(--line);
+}
+.solo-label { font-size: 13px; color: var(--muted); }
+.solo-seg { flex: 1; min-width: 0; flex-wrap: wrap; }
+.solo-seg button { flex: 0 1 auto; padding: 6px 12px; }
+.solo-quit { padding: 6px 12px; }
+
 /* ---------- Lobby ---------- */
 .lobby { max-width: 640px; margin: 0 auto; padding: 48px 16px; }
 .lobby-title h1 { font-size: 72px; margin: 0; color: var(--accent); line-height: 1; }

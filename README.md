@@ -11,7 +11,13 @@ npm run dev        # serveur (port 8000) + client Vite (port 5173)
 ```
 
 Ouvrez http://localhost:5173, créez un salon, puis partagez le lien d'invitation.
-Pour tester seul, ouvrez plusieurs fenêtres de navigation privée.
+
+### Tester seul : le mode solo
+
+Ouvrez http://localhost:5173/?solo=4 (de 3 à 6 joueurs), ou cliquez sur le lien en bas du lobby.
+Toute la partie tourne dans la page, sans serveur, et une barre en haut permet de jouer chaque joueur à tour de rôle.
+Chaque vue ne montre que les cartes du joueur sélectionné, comme en vrai.
+Le client seul suffit : `npm run dev:client`.
 
 ```bash
 npm test           # tests du moteur de règles

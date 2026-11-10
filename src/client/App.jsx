@@ -4,6 +4,7 @@ import { SocketIO } from 'boardgame.io/multiplayer';
 import { LobbyClient } from 'boardgame.io/client';
 import { TheGang } from '../game/game.js';
 import Board from './Board.jsx';
+import SoloMode from './SoloMode.jsx';
 
 // En dev, le serveur tourne à part sur le port 8000 ; en prod il sert aussi le client.
 export const SERVER = import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin;
@@ -42,8 +43,12 @@ const GangClient = Client({
 });
 
 export default function App() {
-  const urlMatch = new URLSearchParams(window.location.search).get('match') || '';
+  const params = new URLSearchParams(window.location.search);
+  const urlMatch = params.get('match') || '';
+  const solo = params.get('solo');
   const [seat, setSeat] = useState(() => (urlMatch ? loadSeats()[urlMatch] : null) || null);
+
+  if (solo !== null) return <SoloMode numPlayers={Number(solo)} />;
 
   if (seat) {
     return (
@@ -167,6 +172,12 @@ function Lobby({ initialCode, onSeated }) {
       </div>
 
       {error && <p className="error">{error}</p>}
+
+      <p className="solo-hint muted">
+        Seul pour tester ?{' '}
+        <a href={`?solo=${numPlayers}`}>Jouer en mode solo à {numPlayers} joueurs</a>, en contrôlant tout le
+        monde depuis cette page, sans serveur.
+      </p>
     </div>
   );
 }
