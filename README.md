@@ -115,6 +115,23 @@ Limites de l'offre gratuite : le service s'endort après 15 minutes sans visite 
 réveiller ; les parties en cours sont perdues à l'endormissement ou au redéploiement (elles sont en mémoire).
 Tant que des joueurs sont connectés, il reste éveillé.
 
+### Hostinger (offre Business ou Cloud, « Node.js web app »)
+
+Ces offres n'acceptent pas les WebSocket entrants : le jeu passe alors par des requêtes HTTP (long polling de
+Socket.IO), ce qui marche très bien pour un jeu au tour par tour (≈ 0,2 s par coup en test).
+
+1. hPanel › **Sites web › Ajouter un site web › Node.js web app**, puis **Importer un dépôt Git** et choisir ce dépôt.
+2. Réglages :
+   - Version de Node : **22** ;
+   - Commande de build : `npm run build` ;
+   - Fichier d'entrée : `server/index.js`.
+3. Variables d'environnement :
+   - `VITE_SOCKET_TRANSPORTS` = `polling` (le navigateur ne tente pas de WebSocket voué à échouer) ;
+   - `DATA_DIR` = `~/thegang-data` (les parties sont sauvegardées sur disque et survivent aux redémarrages).
+4. **Déployer.** Chaque push sur `main` redéploie automatiquement.
+
+En cas de souci : onglets **Deployments** (journal de build) et **Runtime Logs** (journal du serveur) dans hPanel.
+
 ### Sur votre propre serveur
 
 N'importe quel hébergeur Node qui accepte les WebSocket (VPS, Fly.io, Railway…) :

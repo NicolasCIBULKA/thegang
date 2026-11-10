@@ -36,10 +36,14 @@ function setUrlMatch(matchID) {
   window.history.replaceState(null, '', url);
 }
 
+// Par défaut, Socket.IO commence en HTTP (long polling) puis passe en WebSocket si l'hébergeur l'accepte ;
+// sinon il reste en HTTP (cas d'Hostinger). VITE_SOCKET_TRANSPORTS=polling force le HTTP dès le départ.
+const transports = import.meta.env.VITE_SOCKET_TRANSPORTS?.split(',').map((t) => t.trim());
+
 const GangClient = Client({
   game: TheGang,
   board: Board,
-  multiplayer: SocketIO({ server: SERVER }),
+  multiplayer: SocketIO({ server: SERVER, socketOpts: transports ? { transports } : undefined }),
   debug: false,
 });
 
