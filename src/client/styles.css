@@ -756,3 +756,60 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
 /* Salle d'attente : quitter le salon */
 .btn.leave-btn { margin-top: 28px; color: var(--muted); border-color: rgba(201, 162, 74, 0.35); }
 .btn.leave-btn:hover:not(:disabled) { color: var(--gold-hi); border-color: var(--gold); }
+
+/* ==========================================================================
+   Tutoriel
+   ========================================================================== */
+.tuto-panel {
+  margin: 0 0 22px; display: flex; align-items: center; gap: 18px; padding: 14px 18px;
+  border-color: var(--gold); background: rgba(106, 16, 32, 0.4);
+}
+.tuto-panel h2 { margin: 0 0 6px; }
+.tuto-panel p { margin: 0; font-family: var(--serif); font-size: 17px; line-height: 1.35; color: var(--text); }
+.tuto-panel .btn { flex: none; }
+@media (max-width: 600px) { .tuto-panel { flex-direction: column; align-items: stretch; text-align: left; } }
+
+.tutorial { --solo-h: 46px; }
+.tuto-bar { gap: 14px; }
+.tuto-title { font-family: var(--display); letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); font-size: 13px; }
+.tuto-progress { flex: 1; height: 4px; border-radius: 2px; background: rgba(201, 162, 74, 0.2); overflow: hidden; }
+.tuto-progress span { display: block; height: 100%; background: var(--gold); transition: width 0.3s; }
+
+/* Note du cerveau en mode guide : texte, consigne, boutons */
+.coaching .mm-note { cursor: default; display: flex; flex-direction: column; gap: 10px; }
+.mm-step { position: absolute; top: 6px; right: 10px; font-family: var(--display); font-style: normal; font-size: 10px; letter-spacing: 0.12em; color: #8a7458; }
+.mm-task {
+  font-style: normal; font-family: var(--serif); font-weight: 700; font-size: 16px; color: var(--velvet);
+  border-left: 3px solid var(--velvet); padding-left: 8px;
+}
+.mm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.coaching .btn { color: var(--velvet); border-color: var(--velvet); }
+.coaching .btn.primary { color: var(--ivory); }
+.mm-skip {
+  align-self: flex-end; background: none; border: 0; padding: 0; cursor: pointer;
+  font-family: var(--serif); font-style: italic; font-size: 13px; color: #8a7458; text-decoration: underline;
+}
+
+/* Mise en valeur de ce dont parle le cerveau */
+@keyframes tuto-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(230, 194, 113, 0.9), 0 0 24px rgba(230, 194, 113, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(230, 194, 113, 0.35), 0 0 36px rgba(230, 194, 113, 0.25); }
+}
+.tutorial[data-focus='hand'] .me-cards,
+.tutorial[data-focus='chips'] .middle-chips,
+.tutorial[data-focus='community'] .community,
+.tutorial[data-focus='steal'] .others .steal-btn,
+.tutorial[data-focus='reveal'] .reveal-list,
+.tutorial[data-focus='vaults'] .vaults {
+  border-radius: 12px; animation: tuto-pulse 1.6s ease-in-out infinite;
+}
+.tutorial[data-focus='steal'] .others .steal-btn { border-radius: 999px; }
+
+@media (max-width: 720px) {
+  .tutorial { --solo-h: 42px; }
+  .coaching .mm-note { max-height: none; gap: 6px; }
+  .mm-task { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tutorial[data-focus] * { animation-duration: 0s !important; }
+}

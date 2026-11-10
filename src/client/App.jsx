@@ -5,6 +5,7 @@ import { LobbyClient } from 'boardgame.io/client';
 import { TheGang } from '../game/game.js';
 import Board from './Board.jsx';
 import SoloMode from './SoloMode.jsx';
+import TutorialMode from './TutorialMode.jsx';
 import { MODES } from '../game/specialCards.js';
 
 // En dev, le serveur tourne à part sur le port 8000 ; en prod il sert aussi le client.
@@ -61,6 +62,8 @@ export default function App() {
   const urlMatch = params.get('match') || '';
   const solo = params.get('solo');
   const [seat, setSeat] = useState(() => (urlMatch ? loadSeats()[urlMatch] : null) || null);
+
+  if (params.has('tuto')) return <TutorialMode />;
 
   if (solo !== null) {
     // Test d'une carte précise : ?solo=3&effractions=4,8&complice=5
@@ -165,6 +168,19 @@ function Lobby({ initialCode, onSeated }) {
         <h1>The Gang</h1>
         <p>Poker coopératif — classez vos mains sans jamais les dévoiler.</p>
       </header>
+
+      <section className="panel tuto-panel">
+        <div>
+          <h2>Apprendre à jouer</h2>
+          <p>
+            Première fois ? Une partie guidée de quelques minutes : le cerveau du braquage vous explique les jetons, les
+            vols et l’abattage, pendant que vous jouez contre deux complices.
+          </p>
+        </div>
+        <a className="btn primary" href="?tuto">
+          Lancer le tutoriel
+        </a>
+      </section>
 
       <label className="field">
         <span>Votre pseudo</span>

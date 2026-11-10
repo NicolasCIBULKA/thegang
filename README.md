@@ -12,6 +12,12 @@ npm run dev        # serveur (port 8000) + client Vite (port 5173)
 
 Ouvrez http://localhost:5173, créez un salon, puis partagez le lien d'invitation.
 
+### Tutoriel
+
+Le menu propose « Apprendre à jouer » (`?tuto`) : une partie guidée à 3 avec une donne choisie à l'avance,
+où le cerveau du braquage explique les jetons, le vol et l'abattage pendant que Bob et Chloé jouent automatiquement.
+Le scénario (texte, coups des bots, actions attendues) est dans `src/client/TutorialMode.jsx`.
+
 ### Tester seul : le mode solo
 
 Ouvrez http://localhost:5173/?solo=4 (de 3 à 6 joueurs), ou cliquez sur le lien en bas du lobby.

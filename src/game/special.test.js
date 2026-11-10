@@ -5,8 +5,8 @@ import { TheGang, createSetup, resolveVault } from './game.js';
 import { bestHand } from './handEval.js';
 
 let matchCount = 0;
-function play(n = 3, { mode = 'basique', challenges, specialist } = {}) {
-  const forced = challenges || specialist ? { challenges, specialist } : null;
+function play(n = 3, { mode = 'basique', challenges, specialist, deal } = {}) {
+  const forced = challenges || specialist || deal ? { challenges, specialist, deal } : null;
   const game = { ...TheGang, setup: createSetup(mode, forced) };
   const multiplayer = Local();
   const matchID = `special-${++matchCount}`;
@@ -244,5 +244,22 @@ describe('modes de difficulté', () => {
     expect(after.upcoming.challenges).toHaveLength(2);
     expect(after.upcoming.challenges).toContain(Math.max(...g.challenges));
     expect(after.upcoming.specialist).toBeNull();
+  });
+});
+
+describe('donne imposée (tutoriel)', () => {
+  it('distribue exactement les cartes demandées, puis les cartes communes dans l’ordre', () => {
+    const c = (rank, suit) => ({ rank, suit });
+    const deal = {
+      hands: { 0: [c(14, 'H'), c(14, 'S')], 1: [c(7, 'C'), c(2, 'D')], 2: [c(13, 'D'), c(12, 'D')] },
+      community: [c(13, 'S'), c(9, 'H'), c(4, 'C'), c(2, 'C'), c(11, 'D')],
+    };
+    const clients = play(3, { deal });
+    clients.forEach((cl, i) => expect(G(cl).hands[String(i)]).toEqual(deal.hands[i]));
+    for (let r = 0; r < 4; r++) takeRound(clients);
+    expect(G(clients[0]).community).toEqual(deal.community);
+    // Le casse suivant est de nouveau tiré au hasard
+    clients.forEach((cl) => cl.moves.setReady(true));
+    expect(G(clients[0]).hands['0']).not.toEqual(deal.hands[0]);
   });
 });

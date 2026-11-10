@@ -186,7 +186,7 @@ export default function Board(props) {
 
       <div className="main">
         <aside className="side">
-          <Mastermind G={G} ctx={ctx} names={names} />
+          <Mastermind G={G} ctx={ctx} names={names} coach={props.coach} />
           <div className="side-extras" id="side-extras">
             <div className="sheet-head">
               <span>Cartes & registre</span>
@@ -316,7 +316,7 @@ export default function Board(props) {
               <RoundHint G={G} ctx={ctx} color={color} />
             </>
           )}
-          {reveal && !over && (
+          {reveal && !over && !props.coach && (
             <button
               className={`btn primary ${G.ready[playerID] ? 'pressed' : ''}`}
               onClick={() => moves.setReady(!G.ready[playerID])}

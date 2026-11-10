@@ -46,29 +46,76 @@ export function Portrait({ size = 'md' }) {
   );
 }
 
-export default function Mastermind({ G, ctx, names }) {
-  const { key, text } = mastermindLine(G, ctx, names);
-  const [shown, done, finish] = useTypewriter(text, key);
+/**
+ * `coach` (tutoriel) remplace la réplique du cerveau : { key, text, step, total, task, next }.
+ * - task : ce que le joueur doit faire maintenant (affiché en dessous) ;
+ * - next : { label, onClick } pour un bouton « Suivant » quand aucune action de jeu n'est attendue.
+ */
+export default function Mastermind({ G, ctx, names, coach }) {
+  const line = coach ? { key: coach.key, text: coach.text } : mastermindLine(G, ctx, names);
+  const { key, text } = line;
+  const [shown, done, finish] = useTypewriter(text, key, coach ? 18 : 28);
+
+  const identity = (
+    <div className="mm-id">
+      <Portrait />
+      <div className="mm-name">
+        <span className="mm-title">Le Cerveau</span>
+        <span className="mm-sub">
+          {coach ? `tutoriel · ${coach.step}/${coach.total}` : 'celui qui a tout planifié'}
+        </span>
+      </div>
+    </div>
+  );
+  // Le texte complet est lu par les lecteurs d'écran ; l'effet machine à écrire est purement visuel.
+  const words = (
+    <>
+      <span className="sr-only" aria-live="polite">
+        {text}
+      </span>
+      <span aria-hidden="true">
+        « {shown}
+        {done ? ' »' : <span className="caret">▍</span>}
+      </span>
+    </>
+  );
+
+  if (coach) {
+    return (
+      <aside className="mastermind coaching" aria-label="Le cerveau du braquage, votre guide">
+        {identity}
+        <div className="mm-note">
+          <span className="pin" aria-hidden="true" />
+          <span className="mm-step" aria-hidden="true">
+            {coach.step}/{coach.total}
+          </span>
+          {words}
+          {done && coach.task && <span className="mm-task">{coach.task}</span>}
+          {done && coach.next && (
+            <span className="mm-actions">
+              {coach.next.map((b) => (
+                <button key={b.label} className={`btn small-btn ${b.primary ? 'primary' : ''}`} onClick={b.onClick}>
+                  {b.label}
+                </button>
+              ))}
+            </span>
+          )}
+          {!done && (
+            <button className="mm-skip" onClick={finish}>
+              Tout afficher
+            </button>
+          )}
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="mastermind" aria-label="Le cerveau du braquage">
-      <div className="mm-id">
-        <Portrait />
-        <div className="mm-name">
-          <span className="mm-title">Le Cerveau</span>
-          <span className="mm-sub">celui qui a tout planifié</span>
-        </div>
-      </div>
+      {identity}
       <button className="mm-note" onClick={finish} title={done ? undefined : 'Afficher toute la réplique'}>
         <span className="pin" aria-hidden="true" />
-        {/* Le texte complet est lu par les lecteurs d'écran ; l'effet machine à écrire est purement visuel. */}
-        <span className="sr-only" aria-live="polite">
-          {text}
-        </span>
-        <span aria-hidden="true">
-          « {shown}
-          {done ? ' »' : <span className="caret">▍</span>}
-        </span>
+        {words}
       </button>
     </aside>
   );

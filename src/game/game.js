@@ -61,6 +61,17 @@ export function isDarkChip(G, round, stars, numPlayers) {
 
 // ---------- Déroulement d'un casse ----------
 
+/**
+ * Paquet arrangé pour une donne imposée (tutoriel, tests) : { hands: { pid: [cartes] }, community: [5 cartes] }.
+ * Les cartes sont tirées par la fin du tableau : d'abord les mains, joueur par joueur, puis les cartes communes.
+ */
+function stackedDeck(deal, order, handSize, random) {
+  const drawOrder = [...order.flatMap((pid) => deal.hands[pid].slice(0, handSize)), ...deal.community];
+  const used = new Set(drawOrder.map((c) => `${c.rank}${c.suit}`));
+  const rest = random.Shuffle(createDeck().filter((c) => !used.has(`${c.rank}${c.suit}`)));
+  return [...rest, ...drawOrder.reverse()];
+}
+
 function startHeist(G, ctx, random) {
   G.heist += 1;
   G.feed = [];
@@ -78,8 +89,9 @@ function startHeist(G, ctx, random) {
   G.specialist = G.upcoming.specialist ? { id: G.upcoming.specialist, used: false } : null;
   G.upcoming = { challenges: [], specialist: null };
 
-  const deck = random.Shuffle(createDeck());
   const handSize = has(G, 10) ? 3 : 2;
+  const deck = G.forcedDeal ? stackedDeck(G.forcedDeal, players(ctx), handSize, random) : random.Shuffle(createDeck());
+  delete G.forcedDeal; // une donne imposée ne sert qu'au premier casse
   G.hands = {};
   G.chips = {};
   for (const pid of players(ctx)) {
@@ -434,6 +446,7 @@ export function createSetup(mode = 'basique', forced = null) {
       G.upcoming.challenges = [drawFromStack(G.stacks.effraction, random), drawFromStack(G.stacks.effraction, random)];
     }
     if (forced) G.upcoming = { challenges: forced.challenges || [], specialist: forced.specialist || null };
+    if (forced?.deal) G.forcedDeal = forced.deal;
     startHeist(G, ctx, random);
     return G;
   };
