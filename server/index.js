@@ -40,25 +40,47 @@ if (process.env.DATA_DIR) {
 const server = Server({ games: [TheGang], origins, ...(db ? { db } : {}) });
 
 // Certains hébergeurs (préréglage « Express » d'Hostinger) lancent directement ce fichier sans exécuter
-// « npm run build » : si l'interface n'est pas encore compilée, on la compile ici, une fois, au démarrage.
+// « npm run build ». Dans ce cas on compile l'interface ici, APRÈS avoir ouvert le port : l'hébergeur voit
+// tout de suite un serveur qui répond, et les visiteurs voient une page d'attente pendant la compilation.
 // Les variables VITE_* (ex. VITE_SOCKET_TRANSPORTS) sont lues dans l'environnement à ce moment-là.
-if (!fs.existsSync(path.join(DIST, 'index.html')) && process.env.NODE_ENV !== 'development') {
+const needsBuild = !fs.existsSync(path.join(DIST, 'index.html')) && process.env.NODE_ENV !== 'development';
+let building = false;
+let buildError = null;
+
+const WAIT_PAGE = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="5">
+<title>The Gang — préparation</title></head>
+<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#22100c;color:#f3e7cf;font-family:Georgia,serif;text-align:center">
+<div><div style="font-size:28px;letter-spacing:.3em;color:#c9a24a">THE GANG</div>
+<p style="font-style:italic;font-size:19px">Le cerveau prépare la table… La page se recharge toute seule.</p></div></body></html>`;
+
+server.app.use(async (ctx, next) => {
+  if ((building || buildError) && ctx.method === 'GET' && !ctx.path.startsWith('/games') && !ctx.path.startsWith('/socket.io')) {
+    ctx.status = 503;
+    ctx.set('Retry-After', '5');
+    ctx.type = 'html';
+    ctx.body = buildError ? WAIT_PAGE.replace('Le cerveau prépare la table… La page se recharge toute seule.', 'La compilation a échoué : consultez les journaux du serveur.') : WAIT_PAGE;
+    return;
+  }
+  await next();
+});
+
+// Le serveur sert le client compilé (dist/), y compris s'il n'est créé qu'après le démarrage.
+server.app.use(serve(DIST));
+
+server.run(PORT, async () => {
+  console.log(`Serveur The Gang sur le port ${PORT}`);
+  if (!needsBuild) return;
+  building = true;
   console.log('Interface non compilée : compilation en cours…');
   try {
     const { build } = await import('vite');
     await build({ root: path.resolve(__dirname, '..'), logLevel: 'warn' });
     console.log('Interface compilée.');
   } catch (err) {
+    buildError = err;
     console.error('Échec de la compilation de l’interface :', err);
+  } finally {
+    building = false;
   }
-}
-
-// Le serveur sert aussi le client compilé (dist/) :
-// c'est le cas en production, quel que soit l'hébergeur et la façon dont il lance le serveur.
-if (fs.existsSync(path.join(DIST, 'index.html'))) {
-  server.app.use(serve(DIST));
-}
-
-server.run(PORT, () => {
-  console.log(`Serveur The Gang sur le port ${PORT}`);
 });
