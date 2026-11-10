@@ -5,6 +5,7 @@ import { LobbyClient } from 'boardgame.io/client';
 import { TheGang } from '../game/game.js';
 import Board from './Board.jsx';
 import SoloMode from './SoloMode.jsx';
+import { MODES } from '../game/specialCards.js';
 
 // En dev, le serveur tourne à part sur le port 8000 ; en prod il sert aussi le client.
 export const SERVER = import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin;
@@ -48,7 +49,15 @@ export default function App() {
   const solo = params.get('solo');
   const [seat, setSeat] = useState(() => (urlMatch ? loadSeats()[urlMatch] : null) || null);
 
-  if (solo !== null) return <SoloMode numPlayers={Number(solo)} />;
+  if (solo !== null) {
+    // Test d'une carte précise : ?solo=3&effractions=4,8&complice=5
+    const list = (key) => (params.get(key) || '').split(',').map(Number).filter((x) => x >= 1 && x <= 10);
+    const forced =
+      params.has('effractions') || params.has('complice')
+        ? { challenges: list('effractions'), specialist: list('complice')[0] || null }
+        : null;
+    return <SoloMode numPlayers={Number(solo)} mode={params.get('mode') || 'basique'} forced={forced} />;
+  }
 
   if (seat) {
     return (
@@ -72,6 +81,7 @@ function Lobby({ initialCode, onSeated }) {
   });
   const [code, setCode] = useState(initialCode);
   const [numPlayers, setNumPlayers] = useState(4);
+  const [mode, setMode] = useState('basique');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -97,7 +107,7 @@ function Lobby({ initialCode, onSeated }) {
     setBusy(true);
     setError('');
     try {
-      const { matchID } = await lobby.createMatch('the-gang', { numPlayers });
+      const { matchID } = await lobby.createMatch('the-gang', { numPlayers, setupData: { mode } });
       await join(matchID);
     } catch (err) {
       setError('Impossible de créer la partie. Le serveur est-il lancé ?');
@@ -154,6 +164,24 @@ function Lobby({ initialCode, onSeated }) {
               ))}
             </div>
           </label>
+          <div className="field">
+            <span>Difficulté</span>
+            <div className="mode-list">
+              {Object.entries(MODES).map(([key, m]) => (
+                <button
+                  type="button"
+                  key={key}
+                  className={`mode-option ${key === mode ? 'on' : ''}`}
+                  onClick={() => setMode(key)}
+                >
+                  <span>
+                    <strong>{m.label}</strong>
+                    <small>{m.text}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
           <button className="btn primary" disabled={!canSubmit}>
             Créer le salon
           </button>
@@ -175,7 +203,10 @@ function Lobby({ initialCode, onSeated }) {
 
       <p className="solo-hint muted">
         Seul pour tester ?{' '}
-        <a href={`?solo=${numPlayers}`}>Jouer en mode solo à {numPlayers} joueurs</a>, en contrôlant tout le
+        <a href={`?solo=${numPlayers}&mode=${mode}`}>
+          Jouer en mode solo à {numPlayers} joueurs ({MODES[mode].label})
+        </a>
+        , en contrôlant tout le
         monde depuis cette page, sans serveur.
       </p>
     </div>

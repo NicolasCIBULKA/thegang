@@ -19,6 +19,10 @@ Toute la partie tourne dans la page, sans serveur, et une barre en haut permet d
 Chaque vue ne montre que les cartes du joueur sélectionné, comme en vrai.
 Le client seul suffit : `npm run dev:client`.
 
+Options d'URL du mode solo :
+- `&mode=avance` (ou `pro`, `gangster`) : choisir la difficulté ;
+- `&effractions=4,8&complice=5` : imposer des cartes au premier casse pour tester un effet précis.
+
 ```bash
 npm test           # tests du moteur de règles
 npm run build      # compile le client dans dist/
@@ -31,11 +35,15 @@ npm start          # production : un seul port sert le jeu et le client
 src/game/          moteur de règles, sans interface (testable seul)
   cards.js         paquet de 52 cartes
   handEval.js      évaluation des mains de poker (meilleures 5 sur 7)
-  game.js          définition boardgame.io : manches, jetons, coffres
-  game.test.js     tests (vitest)
+  game.js          définition boardgame.io : tours, jetons, coffres, effets des cartes
+  specialCards.js  cartes Effraction, cartes Complice, modes de difficulté
+  *.test.js        tests (vitest) : règles de base + une vérification par carte et par mode
 src/client/        interface React
-  App.jsx          lobby (créer / rejoindre) et connexion au serveur
+  App.jsx          lobby (créer / rejoindre, difficulté) et connexion au serveur
+  SoloMode.jsx     mode solo (tous les joueurs dans une page)
   Board.jsx        table de jeu
+  Specials.jsx     cartes actives, actions des Complices, devinettes, journal
+  parts.jsx        cartes animées, jetons
 server/index.js    serveur boardgame.io (+ fichiers statiques en production)
 ```
 
@@ -49,7 +57,31 @@ server/index.js    serveur boardgame.io (+ fichiers statiques en production)
 - 3 casses réussis : victoire. 3 alarmes : défaite.
 - Chaque joueur ne reçoit du serveur que ses propres cartes (`playerView`), donc impossible de tricher via les outils du navigateur.
 
-Pas encore implémentés : cartes Défi et Spécialiste, chat, variantes à 2 joueurs.
+### Difficultés
+
+| Mode | Règle |
+|---|---|
+| Basique | Sans cartes spéciales. |
+| Avancé | Premier casse normal. Après un succès : une Effraction pour le casse suivant. Après un échec : un Complice. Les piles sont d'abord tirées dans l'ordre 1 à 10, puis mélangées. |
+| Pro | Comme Avancé, sans l'Effraction 1, plus une Effraction tirée au hasard et active toute la partie. |
+| Gangster | Sans l'Effraction 1 ni Complices, défaite à 2 alarmes. Deux Effractions actives ; à chaque casse, on retire la plus petite et on en tire une nouvelle. |
+
+### Cartes Effraction
+
+Toutes sont gérées automatiquement : tours sautés (1, 5), jetons sombres impossibles à voler ou rendre (2, 6),
+repioches selon le flop (3, 7), jetons des tours précédents cachés (8), 3 cartes en main (10).
+Pour le Scan rétinien (4) et le Lecteur d'empreintes (9), une étape « Contrôle de sécurité » apparaît avant l'abattage :
+l'équipe se met d'accord, puis un joueur (pas la cible) valide la réponse.
+
+### Cartes Complice
+
+- **Automatiques en début de casse** : Actionnaire (3) et Génie des chiffres (8) publient les annonces dans le journal ;
+  le Coordinateur (6) demande à chacun de choisir une carte à passer au joueur suivant.
+- **À déclencher** (bouton « Utiliser » quand l'équipe le décide, jusqu'à la fin de la river) : Informateur (1, la carte
+  n'est visible que du destinataire), Conductrice (2), Cerveau de la bande (4), Hackeuse (5), Valet (7, carte V sans couleur),
+  Arnaqueuse (9), Gros bras (10, appliqué automatiquement à l'abattage).
+
+Pas encore implémentés : chat intégré (prévu pour jouer en appel vocal), variantes à 2 joueurs.
 
 ## Déploiement
 

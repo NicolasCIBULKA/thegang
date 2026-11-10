@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Client } from 'boardgame.io/react';
 import { Local } from 'boardgame.io/multiplayer';
-import { TheGang } from '../game/game.js';
+import { TheGang, createSetup } from '../game/game.js';
 import Board from './Board.jsx';
 
 // Mode solo : toute la partie tourne dans le navigateur (pas de serveur),
@@ -9,20 +9,20 @@ import Board from './Board.jsx';
 
 const NAMES = ['Alice', 'Bob', 'Chloé', 'David', 'Emma', 'Farid'];
 
-export default function SoloMode({ numPlayers }) {
+export default function SoloMode({ numPlayers, mode = 'basique', forced = null }) {
   const n = Math.min(6, Math.max(3, numPlayers || 4));
   const [active, setActive] = useState('0');
 
   const SoloClient = useMemo(
     () =>
       Client({
-        game: TheGang,
+        game: { ...TheGang, setup: createSetup(mode, forced) },
         board: Board,
         numPlayers: n,
         multiplayer: Local(),
         debug: false,
       }),
-    [n],
+    [n, mode],
   );
 
   // Identifiant unique : boardgame.io partage l'état des parties locales par matchID.
@@ -52,9 +52,14 @@ export default function SoloMode({ numPlayers }) {
           Quitter
         </a>
       </div>
-      {/* Tous les joueurs restent montés pour partager le même état local ; seul l'actif est visible. */}
+      {/* Tous les joueurs restent montés pour partager le même état local ; seul l'actif est visible.
+          On les masque sans display:none, sinon les animations repartiraient de zéro à chaque changement. */}
       {matchData.map((p) => (
-        <div key={p.id} hidden={String(p.id) !== active}>
+        <div
+          key={p.id}
+          className={String(p.id) === active ? 'solo-view active' : 'solo-view'}
+          aria-hidden={String(p.id) !== active}
+        >
           <SoloClient playerID={String(p.id)} matchID={matchID} soloPlayers={matchData} />
         </div>
       ))}

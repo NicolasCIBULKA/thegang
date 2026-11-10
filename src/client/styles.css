@@ -81,6 +81,7 @@ h1, h2, .brand { font-family: 'Bebas Neue', Impact, sans-serif; letter-spacing: 
 .solo-seg { flex: 1; min-width: 0; flex-wrap: wrap; }
 .solo-seg button { flex: 0 1 auto; padding: 6px 12px; }
 .solo-quit { padding: 6px 12px; }
+.solo-view:not(.active) { position: absolute; left: -10000px; top: 0; width: 1100px; visibility: hidden; pointer-events: none; }
 
 /* ---------- Lobby ---------- */
 .lobby { max-width: 640px; margin: 0 auto; padding: 48px 16px; }
@@ -257,3 +258,95 @@ h1, h2, .brand { font-family: 'Bebas Neue', Impact, sans-serif; letter-spacing: 
 .gameover h2 { font-size: 40px; margin: 6px 0 12px; }
 .gameover.win h2 { color: var(--accent); }
 .gameover.lose h2 { color: var(--ko); }
+
+/* ---------- Animations de distribution ---------- */
+/* Carte face visible : glisse depuis le paquet puis se retourne. */
+.card.deal-flip {
+  animation: deal-flip 0.6s cubic-bezier(.2,.7,.3,1) both;
+  animation-delay: var(--deal-delay, 0ms);
+}
+@keyframes deal-flip {
+  0%   { opacity: 0; transform: translateY(-70px) rotateY(180deg) scale(.85); background: #6e1d1d; color: transparent; }
+  45%  { opacity: 1; transform: translateY(0) rotateY(90deg) scale(1); background: #6e1d1d; color: transparent; }
+  46%  { background: #fbfaf6; }
+  100% { opacity: 1; transform: none; }
+}
+/* Carte face cachée : simple glissement. */
+.card.deal-back:not(.community .card) {
+  animation: deal-back 0.45s ease-out both;
+  animation-delay: var(--deal-delay, 0ms);
+}
+@keyframes deal-back {
+  from { opacity: 0; transform: translateY(-50px) rotate(-8deg); }
+  to   { opacity: 1; transform: none; }
+}
+.card.red.deal-flip { animation-name: deal-flip; }
+.reveal-row { animation: pop 0.3s ease-out both; animation-delay: var(--row-delay, 0ms); }
+@media (prefers-reduced-motion: reduce) {
+  .card.deal-flip, .card.deal-back, .reveal-row { animation: none; }
+}
+
+/* Carte cliquable (défausse, passe, Informateur) */
+.card.clickable { cursor: pointer; border: 0; font: inherit; padding: 0; transition: transform .12s, box-shadow .12s; }
+.card.clickable:hover { transform: translateY(-6px); box-shadow: 0 0 0 3px var(--accent); }
+.card.selected { box-shadow: 0 0 0 3px var(--accent); transform: translateY(-4px); }
+.card.special { color: #7a4cc2; }
+.me-cards.pickable .card { box-shadow: 0 0 0 2px var(--accent), 0 2px 6px rgba(0,0,0,.35); }
+.me-cards-wrap { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.card-action-hint { font-size: 13px; font-weight: 600; color: var(--accent); max-width: 260px; text-align: center; }
+
+/* ---------- Mode, cartes spéciales ---------- */
+.mode-tag {
+  font-family: Inter, sans-serif; font-size: 12px; letter-spacing: 0; vertical-align: middle;
+  border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 2px 8px; margin-left: 6px;
+}
+.active-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.special-card { border-radius: 10px; padding: 10px 12px; border: 1px solid; display: flex; flex-direction: column; gap: 4px; }
+.special-card.effraction { background: rgba(224,85,69,.10); border-color: rgba(224,85,69,.5); }
+.special-card.complice { background: rgba(80,140,230,.10); border-color: rgba(80,140,230,.55); }
+.special-card.used { opacity: .6; }
+.sc-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.sc-kind { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.sc-tag { font-size: 11px; background: rgba(255,255,255,.1); padding: 1px 6px; border-radius: 999px; }
+.sc-name { font-weight: 700; }
+.sc-text { font-size: 13px; color: #c9ced6; }
+.sc-form { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; font-size: 13px; }
+.sc-form select, .guess-fields select {
+  background: #0d1014; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; font: inherit;
+}
+.pick-cards { display: flex; gap: 6px; }
+.btn.small-btn { padding: 6px 10px; font-size: 13px; align-self: flex-start; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-left: 6px; white-space: nowrap; }
+.pill.complice { background: rgba(80,140,230,.25); color: #b9d2fb; }
+.pill.effraction { background: rgba(224,85,69,.25); color: #f6c1ba; }
+
+/* Jetons sombres (Capteurs de bruit / Grille d'aération) */
+.chip.dark { background: #15181d; border-style: solid; }
+.chip-white.dark { border-color: var(--chip-white); color: var(--chip-white); }
+.chip-yellow.dark { border-color: var(--chip-yellow); color: var(--chip-yellow); }
+.chip-orange.dark { border-color: var(--chip-orange); color: var(--chip-orange); }
+.chip-red.dark { border-color: var(--chip-red); color: var(--chip-red); }
+
+/* ---------- Phases spéciales ---------- */
+.phase-note { background: rgba(80,140,230,.25); padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; }
+.guess-panel { background: rgba(0,0,0,.4); border-radius: 12px; padding: 16px; max-width: 560px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.guess-panel h3 { margin: 0; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 28px; color: var(--accent); }
+.guess-panel p { margin: 0; }
+.guess-fields { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.guess-result { text-align: center; margin: 6px 0; font-weight: 600; }
+.guess-result.ok { color: var(--ok); }
+.guess-result.ko { color: var(--ko); }
+.upcoming { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; margin-top: 12px; font-size: 13px; }
+
+/* ---------- Journal ---------- */
+.feed { display: flex; flex-direction: column; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; max-height: 180px; overflow-y: auto; }
+.feed-item { font-size: 13px; color: #c9ced6; }
+.feed-item.secret { display: flex; align-items: center; gap: 8px; color: #b9d2fb; font-weight: 600; }
+
+/* ---------- Lobby : modes ---------- */
+.mode-list { display: grid; gap: 6px; }
+.mode-option { display: flex; gap: 8px; align-items: flex-start; padding: 8px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; background: #0d1014; text-align: left; color: var(--text); font: inherit; }
+.mode-option.on { border-color: var(--accent); }
+.mode-option strong { display: block; font-size: 14px; }
+.mode-option small { color: var(--muted); font-size: 12px; }

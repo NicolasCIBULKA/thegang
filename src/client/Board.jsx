@@ -1,39 +1,12 @@
 import React, { useState } from 'react';
-import { ROUNDS, WINS_NEEDED, ALARMS_TO_LOSE } from '../game/game.js';
-import { RANK_LABELS, SUIT_SYMBOLS } from '../game/cards.js';
+import { ROUNDS, WINS_NEEDED, isDarkChip } from '../game/game.js';
+import { MODES } from '../game/specialCards.js';
+import { Card, CardRow, Chip } from './parts.jsx';
+import { ActiveCards, GuessPanel, GuessResult, Feed, Upcoming } from './Specials.jsx';
 
 // ---------- Petits composants ----------
 
-function Card({ card, small, highlight }) {
-  if (!card) return <div className={`card back ${small ? 'small' : ''}`} />;
-  const red = card.suit === 'H' || card.suit === 'D';
-  return (
-    <div className={`card ${red ? 'red' : ''} ${small ? 'small' : ''} ${highlight ? 'hl' : ''}`}>
-      <span className="rank">{RANK_LABELS[card.rank]}</span>
-      <span className="suit">{SUIT_SYMBOLS[card.suit]}</span>
-    </div>
-  );
-}
-
-function Chip({ color, stars, onClick, size = 'md', title, faded }) {
-  const Tag = onClick ? 'button' : 'div';
-  return (
-    <Tag
-      className={`chip chip-${color} chip-${size} ${faded ? 'faded' : ''} ${onClick ? 'clickable' : ''}`}
-      onClick={onClick}
-      title={title}
-    >
-      {stars != null ? (
-        <>
-          <span className="chip-num">{stars}</span>
-          <span className="chip-star">★</span>
-        </>
-      ) : null}
-    </Tag>
-  );
-}
-
-function VaultTrack({ vaults }) {
+function VaultTrack({ vaults, alarmsToLose }) {
   return (
     <div className="vaults">
       <div className="vault-row" title="Casses réussis">
@@ -44,7 +17,7 @@ function VaultTrack({ vaults }) {
         ))}
       </div>
       <div className="vault-row" title="Alarmes">
-        {Array.from({ length: ALARMS_TO_LOSE }, (_, i) => (
+        {Array.from({ length: alarmsToLose }, (_, i) => (
           <span key={i} className={`vault ko ${i < vaults.alarm ? 'on' : ''}`}>
             ▲
           </span>
@@ -53,8 +26,6 @@ function VaultTrack({ vaults }) {
     </div>
   );
 }
-
-// ---------- Salle d'attente ----------
 
 function WaitingRoom({ matchData, matchID }) {
   const [copied, setCopied] = useState(false);
@@ -105,18 +76,45 @@ export default function Board(props) {
 
   if (!allSeated) return <WaitingRoom matchData={matchData} matchID={matchID} />;
 
+  const n = ctx.playOrder.length;
   const round = ROUNDS[G.round];
   const color = round.key;
-  const bidding = G.phase === 'bidding' && !ctx.gameover;
+  const over = !!ctx.gameover;
+  const bidding = G.phase === 'bidding' && !over;
   const reveal = G.phase === 'reveal';
   const myChip = G.chips[playerID]?.[color];
+  const myChipLocked = myChip != null && isDarkChip(G, G.round, myChip, n);
   const others = ctx.playOrder.filter((pid) => pid !== playerID);
   const connected = Object.fromEntries(matchData.map((p) => [String(p.id), p.isConnected]));
+  const pendingDiscard = G.pendingDiscard?.[playerID];
+  const passing = G.phase === 'pass';
+  const myPassChoice = G.passChoices?.[playerID];
+  const myHand = G.hands[playerID] || [];
+  const leftNeighbor = ctx.playOrder[(ctx.playOrder.indexOf(playerID) + 1) % n];
+
+  // Actions sur mes cartes : défausse (Hackeuse / Valet) ou passe (Coordinateur)
+  let cardAction = null;
+  if (pendingDiscard) {
+    cardAction = {
+      hint:
+        pendingDiscard === 'jack'
+          ? 'Valet : cliquez sur la carte à défausser (pas le Valet spécial).'
+          : 'Hackeuse : cliquez sur la carte à défausser.',
+      onPick: (i) => moves.discardCard(i),
+    };
+  } else if (passing && myPassChoice == null) {
+    cardAction = {
+      hint: `Coordinateur : cliquez sur la carte à passer à ${names[leftNeighbor]}.`,
+      onPick: (i) => moves.passCard(i),
+    };
+  }
 
   return (
     <div className="board">
       <header className="topbar">
-        <div className="brand">The Gang</div>
+        <div className="brand">
+          The Gang <span className="mode-tag">{MODES[G.mode]?.label}</span>
+        </div>
         <div className="round-info">
           <span className="heist">Casse n°{G.heist}</span>
           <span className="round-steps">
@@ -132,10 +130,12 @@ export default function Board(props) {
             ))}
           </span>
         </div>
-        <VaultTrack vaults={G.vaults} />
+        <VaultTrack vaults={G.vaults} alarmsToLose={G.alarmsToLose} />
       </header>
 
       {!isConnected && <div className="banner warn">Connexion au serveur perdue… reconnexion en cours.</div>}
+
+      <ActiveCards G={G} ctx={ctx} playerID={playerID} names={names} moves={moves} canAct={bidding} />
 
       <section className="others">
         {others.map((pid) => (
@@ -145,8 +145,10 @@ export default function Board(props) {
             name={names[pid]}
             online={connected[pid]}
             G={G}
+            n={n}
             color={color}
             bidding={bidding}
+            reveal={reveal}
             onSteal={() => moves.takeChip(G.chips[pid][color], pid)}
           />
         ))}
@@ -154,10 +156,23 @@ export default function Board(props) {
 
       <section className="table">
         <div className="community">
-          {Array.from({ length: 5 }, (_, i) => (
-            <Card key={i} card={G.community[i]} />
-          ))}
+          {Array.from({ length: 5 }, (_, i) => {
+            const card = G.community[i];
+            // Les cartes révélées ensemble (flop) arrivent l'une après l'autre.
+            const firstNew = ROUNDS[G.round].community - (G.round === 1 ? 3 : 1);
+            const delay = card ? Math.max(0, i - firstNew) * 180 : 0;
+            return <Card key={`${G.heist}-${i}-${card ? card.rank + card.suit : 'empty'}`} card={card} delay={delay} />;
+          })}
         </div>
+
+        {passing && (
+          <div className="phase-note">
+            Coordinateur : chacun choisit une carte à passer à son voisin.{' '}
+            {ctx.playOrder.filter((p) => G.passChoices?.[p] != null).length > 0 && myPassChoice != null
+              ? 'En attente des autres…'
+              : ''}
+          </div>
+        )}
 
         {bidding && G.lastSteal && <StealNotice steal={G.lastSteal} names={names} me={playerID} />}
 
@@ -168,31 +183,51 @@ export default function Board(props) {
             </div>
             <div className="middle-chips">
               {G.middle.map((s) => (
-                <Chip key={s} color={color} stars={s} size="lg" onClick={() => moves.takeChip(s)} />
+                <Chip
+                  key={s}
+                  color={color}
+                  stars={s}
+                  size="lg"
+                  dark={isDarkChip(G, G.round, s, n)}
+                  title={isDarkChip(G, G.round, s, n) ? 'Jeton sombre : une fois pris, il ne bouge plus' : undefined}
+                  onClick={myChipLocked ? undefined : () => moves.takeChip(s)}
+                />
               ))}
             </div>
           </div>
         )}
 
+        {G.phase === 'guess' && !over && <GuessPanel G={G} playerID={playerID} names={names} moves={moves} />}
         {reveal && <RevealPanel G={G} names={names} />}
-        {ctx.gameover && <GameOver gameover={ctx.gameover} />}
+        {over && <GameOver gameover={ctx.gameover} />}
       </section>
 
+      <Feed G={G} names={names} />
+
       <section className="me">
-        <div className="me-cards">
-          {(G.hands[playerID] || []).map((c, i) => (
-            <Card key={i} card={c} />
-          ))}
+        <div className="me-cards-wrap">
+          {cardAction && <div className="card-action-hint">{cardAction.hint}</div>}
+          <div className={`me-cards ${cardAction ? 'pickable' : ''}`}>
+            <CardRow
+              cards={myHand}
+              stagger={150}
+              keyPrefix={G.heist}
+              onPick={cardAction?.onPick}
+              title={cardAction ? (pendingDiscard ? 'Défausser cette carte' : 'Passer cette carte') : undefined}
+            />
+          </div>
         </div>
 
         <div className="me-info">
-          <div className="me-name">{names[playerID]} (vous)</div>
+          <div className="me-name">
+            {names[playerID]} (vous){G.muscle === playerID && <span className="pill complice">Gros bras</span>}
+          </div>
           <ChipHistory chips={G.chips[playerID]} upTo={reveal ? 4 : G.round} />
           {bidding && (
             <div className="me-current">
               <span>Votre jeton :</span>
               {myChip != null ? (
-                <Chip color={color} stars={myChip} size="lg" />
+                <Chip color={color} stars={myChip} size="lg" dark={myChipLocked} />
               ) : (
                 <span className="muted">aucun</span>
               )}
@@ -203,13 +238,18 @@ export default function Board(props) {
         <div className="me-actions">
           {bidding && (
             <>
-              <button className="btn" disabled={myChip == null} onClick={() => moves.returnChip()}>
+              <button
+                className="btn"
+                disabled={myChip == null || myChipLocked}
+                onClick={() => moves.returnChip()}
+              >
                 Rendre mon jeton
               </button>
+              {myChipLocked && <span className="muted small">Jeton sombre : il reste à vous pour ce tour.</span>}
               <RoundHint G={G} ctx={ctx} color={color} />
             </>
           )}
-          {reveal && !ctx.gameover && (
+          {reveal && !over && (
             <button
               className={`btn primary ${G.ready[playerID] ? 'pressed' : ''}`}
               onClick={() => moves.setReady(!G.ready[playerID])}
@@ -225,9 +265,11 @@ export default function Board(props) {
 
 function RoundHint({ G, ctx, color }) {
   const holding = ctx.playOrder.filter((pid) => G.chips[pid][color] != null).length;
+  const waiting = Object.keys(G.pendingDiscard || {}).length > 0;
   return (
     <span className="muted small">
-      {holding}/{ctx.playOrder.length} jetons pris. L'étape suivante démarre dès que chacun en a un.
+      {holding}/{ctx.playOrder.length} jetons pris. L'étape suivante démarre dès que chacun en a un
+      {waiting ? ' (et que les défausses en cours sont faites)' : ''}.
     </span>
   );
 }
@@ -249,36 +291,40 @@ function ChipHistory({ chips, upTo }) {
   if (!chips) return null;
   return (
     <div className="history">
-      {ROUNDS.slice(0, upTo).map((r) => (
-        <Chip key={r.key} color={r.key} stars={chips[r.key]} size="sm" title={r.label} />
-      ))}
+      {ROUNDS.slice(0, upTo).map((r) =>
+        chips[r.key] != null ? <Chip key={r.key} color={r.key} stars={chips[r.key]} size="sm" title={r.label} /> : null,
+      )}
     </div>
   );
 }
 
-function Seat({ pid, name, online, G, color, bidding, onSteal }) {
+function Seat({ pid, name, online, G, n, color, bidding, reveal, onSteal }) {
   const chip = G.chips[pid]?.[color];
-  const reveal = G.phase === 'reveal';
+  const locked = chip != null && isDarkChip(G, G.round, chip, n);
+  const hand = G.hands[pid] || Array.from({ length: G.handSizes?.[pid] ?? 2 }, () => null);
+  const pending = G.pendingDiscard?.[pid];
   return (
-    <div className={`seat ${G.ready[pid] ? 'is-ready' : ''}`}>
+    <div className={`seat ${G.ready[pid] && reveal ? 'is-ready' : ''}`}>
       <div className="seat-head">
         <span className={`dot ${online ? 'on' : ''}`} title={online ? 'Connecté' : 'Déconnecté'} />
         <span className="seat-name">{name}</span>
-        {G.ready[pid] && <span className="tag">prêt</span>}
+        {G.muscle === pid && <span className="pill complice">Gros bras</span>}
+        {G.ready[pid] && reveal && <span className="tag">prêt</span>}
       </div>
       <div className="seat-cards">
-        {(G.hands[pid] || [null, null]).map((c, i) => (
-          <Card key={i} card={c} small />
-        ))}
+        <CardRow cards={hand} small stagger={100} baseDelay={reveal ? 300 : 0} keyPrefix={G.heist} />
       </div>
+      {pending && <span className="muted small">doit défausser une carte…</span>}
       <ChipHistory chips={G.chips[pid]} upTo={reveal ? 4 : G.round} />
       {bidding && (
         <div className="seat-current">
-          {chip != null ? (
+          {chip != null && !locked ? (
             <button className="steal-btn" onClick={onSteal} title={`Voler le jeton de ${name}`}>
               <Chip color={color} stars={chip} size="md" />
               <span className="steal-label">Voler</span>
             </button>
+          ) : chip != null ? (
+            <Chip color={color} stars={chip} size="md" dark title="Jeton sombre : impossible à voler" />
           ) : (
             <Chip color={color} faded size="md" title="Pas encore de jeton" />
           )}
@@ -292,29 +338,36 @@ function RevealPanel({ G, names }) {
   const { result } = G;
   if (!result) return null;
   const used = (pid, card) =>
-    result.order
-      .find((o) => o.pid === pid)
-      ?.bestCards.some((b) => b.rank === card.rank && b.suit === card.suit);
+    result.order.find((o) => o.pid === pid)?.bestCards.some((b) => b.rank === card.rank && b.suit === card.suit);
 
   return (
     <div className={`reveal ${result.success ? 'success' : 'fail'}`}>
       <h2>{result.success ? 'Coffre ouvert !' : 'Alarme !'}</h2>
+      <GuessResult guess={result.guess} names={names} />
       <p className="muted">Mains révélées de la plus faible (1★ rouge) à la plus forte.</p>
       <ol className="reveal-list">
-        {result.order.map((o) => (
-          <li key={o.pid} className={o.ok ? 'ok' : 'ko'}>
+        {result.order.map((o, idx) => (
+          <li key={o.pid} className={`${o.ok ? 'ok' : 'ko'} reveal-row`} style={{ '--row-delay': `${idx * 350}ms` }}>
             <Chip color="red" stars={o.stars} size="sm" />
-            <span className="r-name">{names[o.pid]}</span>
+            <span className="r-name">
+              {names[o.pid]}
+              {o.muscle && <span className="pill complice">Gros bras</span>}
+            </span>
             <span className="r-cards">
-              {G.hands[o.pid].map((c, i) => (
-                <Card key={i} card={c} small highlight={used(o.pid, c)} />
-              ))}
+              <CardRow
+                cards={G.hands[o.pid]}
+                small
+                stagger={90}
+                baseDelay={idx * 350}
+                highlight={(c) => used(o.pid, c)}
+              />
             </span>
             <span className="r-hand">{o.handName}</span>
             <span className="r-mark">{o.ok ? '✓' : '✗'}</span>
           </li>
         ))}
       </ol>
+      <Upcoming G={G} />
     </div>
   );
 }

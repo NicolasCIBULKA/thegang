@@ -72,3 +72,16 @@ export function bestHand(cards) {
   }
   return { ...best, name: CATEGORY_NAMES[best.score[0]] };
 }
+
+/** Type de combinaison (indice dans CATEGORY_NAMES), même avec moins de 5 cartes (ex. avant le flop). */
+export function handCategory(cards) {
+  if (cards.length >= 5) return bestHand(cards).score[0];
+  const counts = new Map();
+  for (const c of cards) counts.set(c.rank, (counts.get(c.rank) || 0) + 1);
+  const sizes = [...counts.values()].sort((a, b) => b - a);
+  if (sizes[0] === 4) return 7;
+  if (sizes[0] === 3) return 3;
+  if (sizes[0] === 2 && sizes[1] === 2) return 2;
+  if (sizes[0] === 2) return 1;
+  return 0;
+}
