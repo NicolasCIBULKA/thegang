@@ -95,6 +95,10 @@ Pas encore implémentés : chat intégré (prévu pour jouer en appel vocal), va
   et la réplique en découle : tous les joueurs voient la même. Pour ajouter des répliques : `src/client/mastermind.js`.
 - Polices embarquées via `@fontsource` (Cinzel, Cormorant Garamond, Inter) : aucune dépendance à Google Fonts.
 - Animations désactivées si le système demande de réduire les mouvements.
+- **Tout tient à l'écran, sans défilement** : la table prend la hauteur restante, cartes et jetons s'adaptent à la
+  hauteur de la fenêtre ; à 5–6 joueurs, la révélation passe sur deux colonnes.
+- **Vue téléphone** (≤ 720 px de large) : cerveau en bandeau, adversaires dans une bande qui défile horizontalement,
+  main et bouton d'action en bas, cartes actives et registre dans un panneau « Cartes & registre » qui monte du bas.
 
 ## Déploiement
 

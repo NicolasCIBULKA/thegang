@@ -216,8 +216,6 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
 .pill.effraction { background: rgba(163, 25, 43, 0.3); color: #f2b9b9; border: 1px solid rgba(208, 69, 58, 0.5); }
 
 /* ---------- Scène : cerveau + table ---------- */
-.stage { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 24px; align-items: center; }
-@media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
 
 /* Le cerveau du braquage */
 .mastermind { display: flex; flex-direction: column; gap: 16px; align-items: stretch; }
@@ -254,13 +252,6 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
 }
 .caret { display: inline-block; margin-left: 1px; color: var(--velvet); animation: blink 0.9s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
-@media (max-width: 900px) {
-  .mastermind { flex-direction: row; align-items: center; gap: 14px; }
-  .mm-id { flex: none; }
-  .mm-id .portrait-md { width: 84px; height: 104px; padding: 4px; }
-  .mm-name { display: none; }
-  .mm-note { min-height: 0; font-size: 17px; transform: rotate(-0.6deg); }
-}
 
 /* Autres joueurs, assis au bord de la table */
 .table-area { display: flex; flex-direction: column; gap: 0; min-width: 0; }
@@ -302,11 +293,6 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
   content: '· LA BANDE ·'; position: absolute; top: 22px; left: 0; right: 0; text-align: center;
   font-family: var(--display); letter-spacing: 0.5em; font-size: 11px; color: rgba(232, 201, 131, 0.5);
 }
-@media (max-width: 720px) {
-  .table { border-radius: 36px; padding: 8px; }
-  .table-felt { border-radius: 30px; padding: 40px 12px 24px; min-height: 0; }
-  .others { padding: 0; margin-bottom: 10px; }
-}
 .community { display: flex; gap: 10px; flex-wrap: nowrap; justify-content: center; }
 .middle { text-align: center; }
 .middle-label { font-family: var(--serif); font-style: italic; font-size: 17px; color: #ecd9b0; margin-top: 8px; }
@@ -317,7 +303,6 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
   background: rgba(20, 8, 6, 0.6); border: 1px solid rgba(201, 162, 74, 0.45); border-radius: 10px; padding: 16px 20px;
   display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center;
 }
-@media (max-width: 720px) { .me { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
 .me-cards-wrap { display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .me-cards { display: flex; gap: 10px; }
 .me-cards .card { width: 78px; height: 112px; }
@@ -499,23 +484,271 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
   .card.deal-flip, .card.deal-back, .reveal-row, .chip, .steal-notice, .caret { animation: none !important; }
 }
 
-/* ---------- Ajustements ---------- */
-/* Une note de carte spéciale garde une largeur de note, même seule */
-.active-cards { grid-template-columns: repeat(auto-fill, minmax(240px, 340px)); justify-content: center; }
+
+/* ==========================================================================
+   Mise en page plein écran : tout tient dans la fenêtre, sans défilement.
+   Les tailles des cartes et jetons suivent la hauteur disponible.
+   ========================================================================== */
+:root {
+  --solo-h: 0px;
+  --card-w: clamp(42px, 6.4vh, 64px); /* cartes communes */
+  --hand-w: clamp(50px, 8vh, 78px); /* mes cartes */
+  --seat-card-w: clamp(28px, 4vh, 40px); /* cartes des autres joueurs */
+}
+.solo { --solo-h: 46px; }
+.solo-bar { height: var(--solo-h); flex-wrap: nowrap; overflow-x: auto; }
+
+.board {
+  height: calc(100dvh - var(--solo-h));
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 10px 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.topbar { flex: none; padding-bottom: 8px; }
+.brand-name { font-size: 24px; }
+.lamp { top: -12px; width: 120px; height: 28px; }
+.round-info { padding-top: 16px; }
+
+/* Zone centrale : le cerveau (et ses notes) à gauche, la table à droite */
+.main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: clamp(220px, 22vw, 300px) minmax(0, 1fr);
+  gap: 20px;
+}
+.side {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 8px 8px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 162, 74, 0.4) transparent;
+}
+.side-extras { display: flex; flex-direction: column; gap: 14px; }
+.side .active-cards { grid-template-columns: 1fr; gap: 10px; }
+.side .special-card { padding: 9px 12px 10px; }
+.side .sc-text { font-size: 14px; }
+.side .feed { max-height: none; overflow: visible; }
+.portrait-md { width: clamp(84px, 13vh, 132px); height: clamp(104px, 16vh, 164px); }
+.mm-note { min-height: 0; font-size: clamp(16px, 2.1vh, 19px); padding: 16px 16px 14px; }
+.sheet-toggle, .sheet-head, .sheet-backdrop { display: none; }
+
+.table-area { min-height: 0; display: flex; flex-direction: column; }
+
+/* Joueurs assis au bord de la table : compacts, sur une seule ligne */
+.others { flex: none; margin-bottom: -8px; padding: 0 24px; gap: 6px 14px; }
+.seat {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  grid-template-areas: 'head cards current' 'hist cards current';
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  min-width: 0;
+  padding: 6px 10px;
+}
+.seat-head { grid-area: head; }
+.seat .history { grid-area: hist; min-height: 0; }
+.seat-cards { grid-area: cards; }
+.seat-current { grid-area: current; min-height: 0; }
+.seat > .muted { grid-column: 1 / -1; }
+.seat-name { font-size: 18px; }
+.seat .card.small { width: var(--seat-card-w); height: calc(var(--seat-card-w) * 1.44); }
+.seat .card.small .rank, .seat .card.small .suit { font-size: calc(var(--seat-card-w) * 0.38); }
+.seat .chip-sm { width: 22px; height: 22px; font-size: 9px; }
+
+/* La table occupe toute la hauteur restante */
+.table {
+  --r: clamp(48px, 16vh, 200px);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  border-radius: var(--r);
+  padding: 14px;
+}
+.table-felt {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  border-radius: calc(var(--r) - 14px);
+  padding: clamp(30px, 5vh, 52px) clamp(20px, 6%, 90px) clamp(14px, 2.5vh, 36px);
+  gap: clamp(8px, 1.8vh, 20px);
+  justify-content: safe center;
+}
+.table-felt::before { top: clamp(10px, 2vh, 22px); }
+.community .card { width: var(--card-w); height: calc(var(--card-w) * 1.44); }
+.community .card .rank, .community .card .suit { font-size: calc(var(--card-w) * 0.37); }
+.middle-label { margin-top: 0; font-size: clamp(14px, 1.9vh, 17px); }
+.middle-chips { min-height: 0; }
+.chip-lg { width: clamp(44px, 6.4vh, 58px); height: clamp(44px, 6.4vh, 58px); font-size: clamp(13px, 1.8vh, 16px); }
+
+/* Révélation compacte pour tenir dans la table, même à 6 joueurs */
+.reveal h2 { font-size: clamp(20px, 3vh, 28px); }
+.reveal > p { margin: 2px 0 8px; }
+.reveal-list { gap: 4px; }
+.reveal-list li { padding: 3px 10px; }
+.reveal .card.small { width: 30px; height: 43px; }
+.reveal .card.small .rank, .reveal .card.small .suit { font-size: 12px; }
+
+/* Ma place, en bas */
+.me { flex: none; padding: 10px 18px; gap: 20px; }
+.me-cards .card { width: var(--hand-w); height: calc(var(--hand-w) * 1.44); }
+.me-cards .card .rank, .me-cards .card .suit { font-size: calc(var(--hand-w) * 0.38); }
+.me-info { gap: 4px; }
+.me-actions { gap: 6px; }
+
+/* Écrans peu hauts : on retire les ornements */
+@media (max-height: 780px) {
+  .brand-sub, .mm-sub, .table-felt::before { display: none; }
+  .lamp { display: none; }
+  .round-info { padding-top: 0; }
+  .card-action-hint { font-size: 14px; }
+}
+
+/* ==========================================================================
+   Vue téléphone
+   ========================================================================== */
+@media (max-width: 720px) {
+  :root {
+    --card-w: min(14.5vw, 7vh, 58px);
+    --hand-w: min(15vw, 8vh, 62px);
+    --seat-card-w: 24px;
+  }
+  .solo { --solo-h: 42px; }
+  .solo-label { display: none; }
+  .solo-bar { padding: 4px 8px; gap: 6px; }
+  .solo-seg button { padding: 5px 9px; font-size: 12px; }
+  .solo-quit { padding: 5px 9px; font-size: 11px; }
+
+  .board { padding: 6px 8px 8px; gap: 6px; }
+
+  /* En-tête : nom + coffres + bouton, puis les étapes */
+  .topbar { grid-template-columns: 1fr auto auto; row-gap: 4px; column-gap: 10px; padding-bottom: 6px; }
+  .brand-name { font-size: 17px; letter-spacing: 0.2em; }
+  .brand-sub, .lamp { display: none; }
+  .round-info { grid-column: 1 / -1; grid-row: 2; flex-direction: row; justify-content: space-between; padding-top: 0; }
+  .heist { font-size: 12px; }
+  .round-steps { font-size: 14px; gap: 9px; }
+  .vaults { gap: 4px; }
+  .vault-row::before { display: none; }
+  .vault { width: 11px; height: 11px; }
+  .vault-row { gap: 6px; }
+  .sheet-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--display); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--gold-hi); background: rgba(106, 16, 32, 0.6); border: 1px solid var(--gold);
+    border-radius: 6px; padding: 6px 8px; cursor: pointer; min-height: 32px;
+  }
+  .sheet-badge { background: var(--gold); color: var(--ink); border-radius: 999px; padding: 0 6px; font-family: var(--sans); font-weight: 700; }
+
+  /* Zone centrale empilée : cerveau en bandeau, puis la table */
+  .main { display: flex; flex-direction: column; gap: 6px; }
+  .side { flex: none; overflow: visible; padding: 4px 0 0; }
+  .mastermind { flex-direction: row; align-items: center; gap: 10px; }
+  .mm-id { flex: none; }
+  .mm-id .portrait-md { width: 48px; height: 60px; padding: 3px; }
+  .mm-name { display: none; }
+  .mm-note {
+    font-size: 15px; line-height: 1.3; padding: 10px 12px 8px; transform: rotate(-0.4deg);
+    max-height: 5.4em; overflow-y: auto; border-top-width: 2px;
+  }
+  .mm-note .pin { width: 12px; height: 12px; top: -7px; margin-left: -6px; }
+
+  /* Cartes actives et registre : panneau qui monte du bas */
+  .side-extras { display: none; }
+  .sheet-open .side-extras {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    max-height: 78dvh; overflow-y: auto; padding: 14px 14px 22px;
+    background: var(--wood-2); border-top: 2px solid var(--gold); border-radius: 16px 16px 0 0;
+    box-shadow: 0 -20px 40px rgba(0, 0, 0, 0.6);
+    animation: sheet-up 0.25s ease-out;
+  }
+  .sheet-open .sheet-backdrop { display: block; position: fixed; inset: 0; z-index: 39; background: rgba(0, 0, 0, 0.55); }
+  .sheet-head {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--display); letter-spacing: 0.16em; font-size: 13px; color: var(--gold);
+  }
+  .side .active-cards { grid-template-columns: 1fr; }
+
+  /* Autres joueurs : bandeau défilant horizontalement */
+  .others {
+    flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; gap: 6px;
+    padding: 0 0 4px; margin-bottom: 4px; scrollbar-width: none;
+  }
+  .seat {
+    flex: none; grid-template-columns: auto auto; grid-template-areas: 'head head' 'cards current' 'hist hist';
+    column-gap: 6px; row-gap: 3px; padding: 5px 7px; background: rgba(20, 8, 6, 0.5);
+    border: 1px solid rgba(201, 162, 74, 0.25); border-radius: 8px; justify-items: center;
+  }
+  .seat-name { font-size: 15px; }
+  .seat .chip-sm { width: 18px; height: 18px; font-size: 8px; }
+  .seat .chip-md { width: 34px; height: 34px; font-size: 11px; }
+  .steal-btn { padding: 2px; gap: 0; border-radius: 50%; }
+  .steal-label { display: none; }
+
+  .table { --r: 26px; padding: 6px; }
+  .table-felt { padding: 22px 8px 12px; gap: 10px; }
+  .table-felt::before { font-size: 9px; top: 7px; }
+  .community { gap: 4px; }
+  .middle-label { font-size: 14px; }
+  .middle-chips { gap: 10px; }
+  .chip-lg { width: 48px; height: 48px; font-size: 14px; }
+  .guess-panel { padding: 12px; font-size: 15px; }
+  .reveal-list li { grid-template-columns: auto 1fr auto auto; gap: 6px; }
+  .r-hand { grid-column: auto; min-width: 0; font-size: 13px; }
+  .r-name { font-size: 15px; }
+
+  /* Ma main : cartes à gauche, infos et bouton à droite */
+  .me {
+    grid-template-columns: auto 1fr; justify-items: stretch; text-align: left;
+    padding: 8px 10px; gap: 4px 12px;
+  }
+  .me-cards-wrap { grid-row: span 2; }
+  .me-cards { gap: 6px; }
+  .me-name { font-size: 13px; }
+  .me-current { font-size: 15px; gap: 6px; }
+  .me-current .chip-lg { width: 40px; height: 40px; }
+  .me .history { min-height: 0; }
+  .me-actions { max-width: none; }
+  .me-actions .btn { padding: 9px 10px; font-size: 11px; }
+  .hint-long { display: none; }
+  .card-action-hint { font-size: 13px; max-width: 150px; }
+}
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+
+/* ---------- Ajustements après essais (6 joueurs, petits écrans) ---------- */
+/* Places compactes : nom au-dessus, cartes + jeton, historique dessous — 5 adversaires tiennent sur une ligne */
+.seat { grid-template-columns: auto auto; grid-template-areas: 'head head' 'cards current' 'hist hist'; justify-items: center; }
+.others { justify-content: space-evenly; padding: 0 8px; }
+.solo-seg { flex-wrap: nowrap; }
+
+/* Révélation à 5 ou 6 joueurs : deux colonnes, lues de haut en bas (du plus faible au plus fort) */
+@media (min-width: 900px) {
+  .reveal-list.two-cols { grid-auto-flow: column; grid-template-rows: repeat(var(--rows), auto); grid-template-columns: 1fr 1fr; column-gap: 10px; }
+  .reveal:has(.two-cols) { max-width: 900px; }
+  .two-cols .r-hand { min-width: 0; }
+}
 
 @media (max-width: 720px) {
-  .board { padding: 12px 12px 24px; gap: 14px; }
-  .topbar { grid-template-columns: 1fr auto; row-gap: 6px; }
-  .lamp { display: none; }
-  .brand-name { font-size: 22px; letter-spacing: 0.22em; }
-  .brand-sub { font-size: 14px; }
-  .round-info { grid-column: 1 / -1; grid-row: 2; padding-top: 0; }
-  .vaults { grid-column: 2; grid-row: 1; }
-  .community { gap: 5px; }
-  .community .card { width: 50px; height: 72px; }
-  .community .card .rank, .community .card .suit { font-size: 19px; }
-  .middle-label { font-size: 15px; }
-  .solo-label { display: none; }
-  .solo-bar { padding: 6px 10px; gap: 8px; }
-  .solo-seg button { padding: 5px 9px; }
+  .table-area { flex: 1; }
+  .reveal-list li, .reveal-list.two-cols li { grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: 6px; padding: 3px 6px; }
+  .r-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .r-hand { font-size: 12px; }
+  .reveal > p { display: none; }
+  .reveal .card.small { width: 24px; height: 35px; }
+  .reveal .card.small .rank, .reveal .card.small .suit { font-size: 10px; }
+  /* Pendant la révélation, toutes les mains sont dans la liste : on libère la place du bandeau des joueurs */
+  .board:has(.reveal) .others { display: none; }
+  .board:has(.reveal) .community { --card-w: min(11vw, 5.5vh, 46px); }
+  .upcoming { margin-top: 6px; font-size: 13px; }
 }
+.solo-seg { overflow-x: auto; scrollbar-width: none; }
+.solo-quit { flex: none; }

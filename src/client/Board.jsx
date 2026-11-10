@@ -70,6 +70,8 @@ function WaitingRoom({ matchData, matchID }) {
 
 export default function Board(props) {
   const { G, ctx, moves, playerID, matchID, isConnected } = props;
+  // Téléphone : les cartes actives et le registre sont rangés dans un panneau qu'on ouvre à la demande.
+  const [sheetOpen, setSheetOpen] = useState(false);
   // En mode solo (sans serveur), boardgame.io ne fournit pas matchData : SoloMode passe soloPlayers.
   const matchData = props.soloPlayers || props.matchData || [];
   const names = Object.fromEntries(matchData.map((p) => [String(p.id), p.name || `Joueur ${p.id + 1}`]));
@@ -111,7 +113,7 @@ export default function Board(props) {
   }
 
   return (
-    <div className="board">
+    <div className={`board ${sheetOpen ? 'sheet-open' : ''}`}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-name">The Gang</span>
@@ -134,14 +136,36 @@ export default function Board(props) {
           </span>
         </div>
         <VaultTrack vaults={G.vaults} alarmsToLose={G.alarmsToLose} />
+        <button
+          className="sheet-toggle"
+          onClick={() => setSheetOpen(true)}
+          aria-expanded={sheetOpen}
+          aria-controls="side-extras"
+        >
+          Cartes & registre
+          {G.challenges.length + (G.specialist ? 1 : 0) > 0 && (
+            <span className="sheet-badge">{G.challenges.length + (G.specialist ? 1 : 0)}</span>
+          )}
+        </button>
       </header>
 
       {!isConnected && <div className="banner warn">Connexion au serveur perdue… reconnexion en cours.</div>}
 
-      <ActiveCards G={G} ctx={ctx} playerID={playerID} names={names} moves={moves} canAct={bidding} />
-
-      <div className="stage">
-        <Mastermind G={G} ctx={ctx} names={names} />
+      <div className="main">
+        <aside className="side">
+          <Mastermind G={G} ctx={ctx} names={names} />
+          <div className="side-extras" id="side-extras">
+            <div className="sheet-head">
+              <span>Cartes & registre</span>
+              <button className="btn small-btn" onClick={() => setSheetOpen(false)}>
+                Fermer
+              </button>
+            </div>
+            <ActiveCards G={G} ctx={ctx} playerID={playerID} names={names} moves={moves} canAct={bidding} />
+            <Feed G={G} names={names} />
+          </div>
+        </aside>
+        <div className="sheet-backdrop" onClick={() => setSheetOpen(false)} aria-hidden="true" />
         <div className="table-area">
           <section className="others">
             {others.map((pid) => (
@@ -218,8 +242,6 @@ export default function Board(props) {
         </div>
       </div>
 
-      <Feed G={G} names={names} />
-
       <section className="me">
         <div className="me-cards-wrap">
           {cardAction && <div className="card-action-hint">{cardAction.hint}</div>}
@@ -257,7 +279,7 @@ export default function Board(props) {
               <button className="btn" disabled={myChip == null || myChipLocked} onClick={() => moves.returnChip()}>
                 Rendre mon jeton
               </button>
-              {myChipLocked && <span className="muted small">Jeton sombre : il reste à vous pour ce tour.</span>}
+              {myChipLocked && <span className="muted small hint">Jeton sombre : il reste à vous pour ce tour.</span>}
               <RoundHint G={G} ctx={ctx} color={color} />
             </>
           )}
@@ -279,9 +301,12 @@ function RoundHint({ G, ctx, color }) {
   const holding = ctx.playOrder.filter((pid) => G.chips[pid][color] != null).length;
   const waiting = Object.keys(G.pendingDiscard || {}).length > 0;
   return (
-    <span className="muted small">
-      {holding}/{ctx.playOrder.length} jetons pris. L'étape suivante démarre dès que chacun en a un
-      {waiting ? ' (et que les défausses en cours sont faites)' : ''}.
+    <span className="muted small hint">
+      {holding}/{ctx.playOrder.length} jetons pris
+      <span className="hint-long">
+        . L'étape suivante démarre dès que chacun en a un{waiting ? ' (et que les défausses en cours sont faites)' : ''}
+      </span>
+      .
     </span>
   );
 }
@@ -362,7 +387,10 @@ function RevealPanel({ G, names }) {
       <h2>{result.success ? 'Coffre ouvert !' : 'Alarme !'}</h2>
       <GuessResult guess={result.guess} names={names} />
       <p className="muted">Mains révélées de la plus faible (1★ rouge) à la plus forte.</p>
-      <ol className="reveal-list">
+      <ol
+        className={`reveal-list ${result.order.length > 4 ? 'two-cols' : ''}`}
+        style={{ '--rows': Math.ceil(result.order.length / 2) }}
+      >
         {result.order.map((o, idx) => (
           <li key={o.pid} className={`${o.ok ? 'ok' : 'ko'} reveal-row`} style={{ '--row-delay': `${idx * 350}ms` }}>
             <Chip color="red" stars={o.stars} size="sm" />
