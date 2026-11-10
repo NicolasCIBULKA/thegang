@@ -3,6 +3,7 @@ import { ROUNDS, WINS_NEEDED, isDarkChip } from '../game/game.js';
 import { MODES } from '../game/specialCards.js';
 import { Card, CardRow, Chip } from './parts.jsx';
 import { ActiveCards, GuessPanel, GuessResult, Feed, Upcoming } from './Specials.jsx';
+import Mastermind from './Mastermind.jsx';
 
 // ---------- Petits composants ----------
 
@@ -113,8 +114,10 @@ export default function Board(props) {
     <div className="board">
       <header className="topbar">
         <div className="brand">
-          The Gang <span className="mode-tag">{MODES[G.mode]?.label}</span>
+          <span className="brand-name">The Gang</span>
+          <span className="brand-sub">Cercle privé · entrée par la cave · {MODES[G.mode]?.label}</span>
         </div>
+        <div className="lamp" aria-hidden="true" />
         <div className="round-info">
           <span className="heist">Casse n°{G.heist}</span>
           <span className="round-steps">
@@ -137,70 +140,83 @@ export default function Board(props) {
 
       <ActiveCards G={G} ctx={ctx} playerID={playerID} names={names} moves={moves} canAct={bidding} />
 
-      <section className="others">
-        {others.map((pid) => (
-          <Seat
-            key={pid}
-            pid={pid}
-            name={names[pid]}
-            online={connected[pid]}
-            G={G}
-            n={n}
-            color={color}
-            bidding={bidding}
-            reveal={reveal}
-            onSteal={() => moves.takeChip(G.chips[pid][color], pid)}
-          />
-        ))}
-      </section>
+      <div className="stage">
+        <Mastermind G={G} ctx={ctx} names={names} />
+        <div className="table-area">
+          <section className="others">
+            {others.map((pid) => (
+              <Seat
+                key={pid}
+                pid={pid}
+                name={names[pid]}
+                online={connected[pid]}
+                G={G}
+                n={n}
+                color={color}
+                bidding={bidding}
+                reveal={reveal}
+                onSteal={() => moves.takeChip(G.chips[pid][color], pid)}
+              />
+            ))}
+          </section>
 
-      <section className="table">
-        <div className="community">
-          {Array.from({ length: 5 }, (_, i) => {
-            const card = G.community[i];
-            // Les cartes révélées ensemble (flop) arrivent l'une après l'autre.
-            const firstNew = ROUNDS[G.round].community - (G.round === 1 ? 3 : 1);
-            const delay = card ? Math.max(0, i - firstNew) * 180 : 0;
-            return <Card key={`${G.heist}-${i}-${card ? card.rank + card.suit : 'empty'}`} card={card} delay={delay} />;
-          })}
+          <section className="table">
+            <div className="table-felt">
+              <div className="community">
+                {Array.from({ length: 5 }, (_, i) => {
+                  const card = G.community[i];
+                  // Les cartes révélées ensemble (flop) arrivent l'une après l'autre.
+                  const firstNew = ROUNDS[G.round].community - (G.round === 1 ? 3 : 1);
+                  const delay = card ? Math.max(0, i - firstNew) * 180 : 0;
+                  return (
+                    <Card key={`${G.heist}-${i}-${card ? card.rank + card.suit : 'empty'}`} card={card} delay={delay} />
+                  );
+                })}
+              </div>
+
+              {passing && (
+                <div className="phase-note">
+                  Coordinateur : chacun choisit une carte à passer à son voisin.{' '}
+                  {ctx.playOrder.filter((p) => G.passChoices?.[p] != null).length > 0 && myPassChoice != null
+                    ? 'En attente des autres…'
+                    : ''}
+                </div>
+              )}
+
+              {bidding && G.lastSteal?.victim === playerID && (
+                <StealNotice steal={G.lastSteal} names={names} me={playerID} />
+              )}
+
+              {bidding && (
+                <div className="middle">
+                  <div className="middle-label">
+                    Jetons du {round.label.toLowerCase()} — prenez-en un, ou subtilisez celui d’un complice
+                  </div>
+                  <div className="middle-chips">
+                    {G.middle.map((s) => (
+                      <Chip
+                        key={s}
+                        color={color}
+                        stars={s}
+                        size="lg"
+                        dark={isDarkChip(G, G.round, s, n)}
+                        title={
+                          isDarkChip(G, G.round, s, n) ? 'Jeton sombre : une fois pris, il ne bouge plus' : undefined
+                        }
+                        onClick={myChipLocked ? undefined : () => moves.takeChip(s)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {G.phase === 'guess' && !over && <GuessPanel G={G} playerID={playerID} names={names} moves={moves} />}
+              {reveal && <RevealPanel G={G} names={names} />}
+              {over && <GameOver gameover={ctx.gameover} />}
+            </div>
+          </section>
         </div>
-
-        {passing && (
-          <div className="phase-note">
-            Coordinateur : chacun choisit une carte à passer à son voisin.{' '}
-            {ctx.playOrder.filter((p) => G.passChoices?.[p] != null).length > 0 && myPassChoice != null
-              ? 'En attente des autres…'
-              : ''}
-          </div>
-        )}
-
-        {bidding && G.lastSteal && <StealNotice steal={G.lastSteal} names={names} me={playerID} />}
-
-        {bidding && (
-          <div className="middle">
-            <div className="middle-label">
-              Jetons {round.label.toLowerCase()} : prenez-en un au centre, ou volez celui d'un autre joueur
-            </div>
-            <div className="middle-chips">
-              {G.middle.map((s) => (
-                <Chip
-                  key={s}
-                  color={color}
-                  stars={s}
-                  size="lg"
-                  dark={isDarkChip(G, G.round, s, n)}
-                  title={isDarkChip(G, G.round, s, n) ? 'Jeton sombre : une fois pris, il ne bouge plus' : undefined}
-                  onClick={myChipLocked ? undefined : () => moves.takeChip(s)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {G.phase === 'guess' && !over && <GuessPanel G={G} playerID={playerID} names={names} moves={moves} />}
-        {reveal && <RevealPanel G={G} names={names} />}
-        {over && <GameOver gameover={ctx.gameover} />}
-      </section>
+      </div>
 
       <Feed G={G} names={names} />
 
@@ -227,7 +243,7 @@ export default function Board(props) {
             <div className="me-current">
               <span>Votre jeton :</span>
               {myChip != null ? (
-                <Chip color={color} stars={myChip} size="lg" dark={myChipLocked} />
+                <Chip key={`${color}-${myChip}`} color={color} stars={myChip} size="lg" dark={myChipLocked} />
               ) : (
                 <span className="muted">aucun</span>
               )}
@@ -238,11 +254,7 @@ export default function Board(props) {
         <div className="me-actions">
           {bidding && (
             <>
-              <button
-                className="btn"
-                disabled={myChip == null || myChipLocked}
-                onClick={() => moves.returnChip()}
-              >
+              <button className="btn" disabled={myChip == null || myChipLocked} onClick={() => moves.returnChip()}>
                 Rendre mon jeton
               </button>
               {myChipLocked && <span className="muted small">Jeton sombre : il reste à vous pour ce tour.</span>}
@@ -319,7 +331,12 @@ function Seat({ pid, name, online, G, n, color, bidding, reveal, onSteal }) {
       {bidding && (
         <div className="seat-current">
           {chip != null && !locked ? (
-            <button className="steal-btn" onClick={onSteal} title={`Voler le jeton de ${name}`}>
+            <button
+              key={`${color}-${chip}`}
+              className="steal-btn"
+              onClick={onSteal}
+              title={`Voler le jeton de ${name}`}
+            >
               <Chip color={color} stars={chip} size="md" />
               <span className="steal-label">Voler</span>
             </button>

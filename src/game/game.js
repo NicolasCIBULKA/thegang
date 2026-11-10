@@ -25,6 +25,12 @@ const has = (G, id) => G.challenges.includes(id);
 const emptyChips = () => Object.fromEntries(ROUNDS.map((r) => [r.key, null]));
 const sameCard = (a, b) => a.rank === b.rank && a.suit === b.suit;
 
+/** Dernier événement marquant : sert au cerveau du braquage pour choisir sa réplique (identique pour tous). */
+function emit(G, type, data = {}) {
+  G.eventSeq = (G.eventSeq || 0) + 1;
+  G.event = { type, seq: G.eventSeq, heist: G.heist, ...data };
+}
+
 function say(G, text) {
   G.feed.push({ text });
 }
@@ -104,6 +110,7 @@ function startHeist(G, ctx, random) {
   }
   if (spec === 6) {
     G.phase = 'pass';
+    emit(G, 'pass');
     G.specialist.used = true;
     return;
   }
@@ -138,6 +145,7 @@ function enterRound(G, ctx, r) {
   if (has(G, 8) && r > 0) say(G, `Panne d’électricité : les jetons du tour précédent sont défaussés.`);
   G.middle = players(ctx).map((_, i) => i + 1);
   G.lastSteal = null;
+  emit(G, 'round', { round: r });
 }
 
 function redraw(G, ctx, predicate, cardName) {
@@ -169,6 +177,7 @@ function maybeAdvance(G, ctx, random) {
     const target = players(ctx).find((p) => G.chips[p].red === n);
     G.guess = { target, needRank, needCategory, answer: null };
     G.phase = 'guess';
+    emit(G, 'guess', { target, needRank, needCategory });
     return;
   }
   openVault(G, ctx, random);
@@ -215,6 +224,7 @@ function openVault(G, ctx, random) {
   result.guess = G.guess;
   G.result = result;
   G.phase = 'reveal';
+  emit(G, 'vault', { success: result.success, guessFailed: !!(G.guess && !G.guess.correct) });
   if (result.success) G.vaults.success += 1;
   else G.vaults.alarm += 1;
   prepareUpcoming(G, random, result.success);
@@ -263,6 +273,7 @@ function takeChip({ G, ctx, playerID, random }, stars, from = 'middle') {
     if (isDarkChip(G, G.round, stars, n)) return INVALID_MOVE;
     G.chips[from][color] = null;
     G.lastSteal = { thief: playerID, victim: from, stars, color, id: (G.lastSteal?.id || 0) + 1 };
+    emit(G, 'steal', { thief: playerID, victim: from, stars });
   }
   if (mine != null) G.middle.push(mine);
   sortMiddle(G);
@@ -338,6 +349,7 @@ function useSpecialist({ G, ctx, playerID, random }, payload = {}) {
   }
   spec.used = true;
   spec.by = playerID;
+  emit(G, 'special', { id: spec.id, by: playerID });
 }
 
 function discardCard({ G, ctx, playerID, random }, cardIndex) {

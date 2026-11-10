@@ -42,8 +42,11 @@ src/client/        interface React
   App.jsx          lobby (créer / rejoindre, difficulté) et connexion au serveur
   SoloMode.jsx     mode solo (tous les joueurs dans une page)
   Board.jsx        table de jeu
+  Mastermind.jsx   le cerveau du braquage (portrait + réplique épinglée)
+  mastermind.js    banque de répliques, choisies d'après le dernier événement de la partie
   Specials.jsx     cartes actives, actions des Complices, devinettes, journal
   parts.jsx        cartes animées, jetons
+  styles.css       thème « salon feutré × tripot » (boiseries, velours bordeaux, dorures)
 server/index.js    serveur boardgame.io (+ fichiers statiques en production)
 ```
 
@@ -82,6 +85,16 @@ l'équipe se met d'accord, puis un joueur (pas la cible) valide la réponse.
   Arnaqueuse (9), Gros bras (10, appliqué automatiquement à l'abattage).
 
 Pas encore implémentés : chat intégré (prévu pour jouer en appel vocal), variantes à 2 joueurs.
+
+## Ambiance
+
+- Décor de cercle de jeu clandestin : boiseries, lampe suspendue, table en velours bordeaux à rebord doré,
+  cartes ivoire légèrement inclinées, jetons de casino, notes épinglées sur papier.
+- **Le cerveau du braquage** commente la partie : distribution, flop, turn, river, vols de jetons, Complices utilisés,
+  contrôles de sécurité, coffre ouvert ou alarme, victoire, défaite. Le moteur publie le dernier événement (`G.event`)
+  et la réplique en découle : tous les joueurs voient la même. Pour ajouter des répliques : `src/client/mastermind.js`.
+- Polices embarquées via `@fontsource` (Cinzel, Cormorant Garamond, Inter) : aucune dépendance à Google Fonts.
+- Animations désactivées si le système demande de réduire les mouvements.
 
 ## Déploiement
 

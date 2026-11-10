@@ -154,3 +154,27 @@ describe('déroulement de la partie', () => {
     expect(Math.max(G.vaults.success, G.vaults.alarm)).toBe(3);
   });
 });
+
+describe('événements pour le cerveau', () => {
+  it('chaque étape émet un événement numéroté', async () => {
+    const { Client } = await import('boardgame.io/client');
+    const { Local } = await import('boardgame.io/multiplayer');
+    const multiplayer = Local();
+    const clients = [0, 1, 2].map((i) =>
+      Client({ game: TheGang, numPlayers: 3, playerID: String(i), matchID: 'events', multiplayer }),
+    );
+    clients.forEach((c) => c.start());
+    const ev = () => clients[0].getState().G.event;
+    expect(ev()).toMatchObject({ type: 'round', round: 0, heist: 1 });
+    clients[0].moves.takeChip(1);
+    clients[1].moves.takeChip(1, '0');
+    expect(ev()).toMatchObject({ type: 'steal', thief: '1', victim: '0', stars: 1 });
+    const seq = ev().seq;
+    clients[0].moves.takeChip(2);
+    clients[2].moves.takeChip(3);
+    expect(ev()).toMatchObject({ type: 'round', round: 1 });
+    expect(ev().seq).toBeGreaterThan(seq);
+    for (let r = 1; r < 4; r++) clients.forEach((c, i) => c.moves.takeChip(i + 1));
+    expect(ev().type).toBe('vault');
+  });
+});

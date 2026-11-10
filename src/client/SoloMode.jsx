@@ -39,11 +39,7 @@ export default function SoloMode({ numPlayers, mode = 'basique', forced = null }
         <span className="solo-label">Mode solo — vous jouez :</span>
         <div className="seg solo-seg">
           {matchData.map((p) => (
-            <button
-              key={p.id}
-              className={String(p.id) === active ? 'on' : ''}
-              onClick={() => setActive(String(p.id))}
-            >
+            <button key={p.id} className={String(p.id) === active ? 'on' : ''} onClick={() => setActive(String(p.id))}>
               {p.name}
             </button>
           ))}

@@ -170,8 +170,7 @@ export function GuessPanel({ G, playerID, names, moves }) {
       <h3>Contrôle de sécurité</h3>
       {isTarget ? (
         <p>
-          Vous avez le plus haut jeton rouge : l’équipe doit deviner{' '}
-          {needRank && 'une valeur de vos cartes'}
+          Vous avez le plus haut jeton rouge : l’équipe doit deviner {needRank && 'une valeur de vos cartes'}
           {needRank && needCategory && ' et '}
           {needCategory && 'votre combinaison'}. Vous ne pouvez pas répondre.
         </p>
@@ -237,9 +236,7 @@ export function Feed({ G, names }) {
     <section className="feed">
       {secrets.map((s, i) => (
         <div key={`s${i}`} className="feed-item secret">
-          <span>
-            🤫 {names[s.from]} vous montre en secret :
-          </span>
+          <span>🤫 {names[s.from]} vous montre en secret :</span>
           <Card card={s.card} small />
         </div>
       ))}

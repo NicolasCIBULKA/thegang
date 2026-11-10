@@ -51,7 +51,11 @@ export default function App() {
 
   if (solo !== null) {
     // Test d'une carte précise : ?solo=3&effractions=4,8&complice=5
-    const list = (key) => (params.get(key) || '').split(',').map(Number).filter((x) => x >= 1 && x <= 10);
+    const list = (key) =>
+      (params.get(key) || '')
+        .split(',')
+        .map(Number)
+        .filter((x) => x >= 1 && x <= 10);
     const forced =
       params.has('effractions') || params.has('complice')
         ? { challenges: list('effractions'), specialist: list('complice')[0] || null }
@@ -60,13 +64,7 @@ export default function App() {
   }
 
   if (seat) {
-    return (
-      <GangClient
-        matchID={seat.matchID}
-        playerID={seat.playerID}
-        credentials={seat.credentials}
-      />
-    );
+    return <GangClient matchID={seat.matchID} playerID={seat.playerID} credentials={seat.credentials} />;
   }
   return <Lobby initialCode={urlMatch} onSeated={setSeat} />;
 }
@@ -153,12 +151,7 @@ function Lobby({ initialCode, onSeated }) {
             <span>Nombre de joueurs</span>
             <div className="seg">
               {[3, 4, 5, 6].map((n) => (
-                <button
-                  type="button"
-                  key={n}
-                  className={n === numPlayers ? 'on' : ''}
-                  onClick={() => setNumPlayers(n)}
-                >
+                <button type="button" key={n} className={n === numPlayers ? 'on' : ''} onClick={() => setNumPlayers(n)}>
                   {n}
                 </button>
               ))}
@@ -206,8 +199,7 @@ function Lobby({ initialCode, onSeated }) {
         <a href={`?solo=${numPlayers}&mode=${mode}`}>
           Jouer en mode solo à {numPlayers} joueurs ({MODES[mode].label})
         </a>
-        , en contrôlant tout le
-        monde depuis cette page, sans serveur.
+        , en contrôlant tout le monde depuis cette page, sans serveur.
       </p>
     </div>
   );
