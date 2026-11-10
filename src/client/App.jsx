@@ -29,6 +29,15 @@ function saveSeat(matchID, seat) {
     /* stockage indisponible : la place ne sera simplement pas mémorisée */
   }
 }
+function removeSeat(matchID) {
+  try {
+    const seats = loadSeats();
+    delete seats[matchID];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(seats));
+  } catch {
+    /* stockage indisponible : rien à nettoyer */
+  }
+}
 function setUrlMatch(matchID) {
   const url = new URL(window.location.href);
   if (matchID) url.searchParams.set('match', matchID);
@@ -67,10 +76,30 @@ export default function App() {
     return <SoloMode numPlayers={Number(solo)} mode={params.get('mode') || 'basique'} forced={forced} />;
   }
 
-  if (seat) {
-    return <GangClient matchID={seat.matchID} playerID={seat.playerID} credentials={seat.credentials} />;
+  // Quitter le salon (salle d'attente) : libère la place côté serveur puis revient au lobby.
+  async function leave() {
+    try {
+      await lobby.leaveMatch('the-gang', seat.matchID, { playerID: seat.playerID, credentials: seat.credentials });
+    } catch {
+      /* place déjà libérée ou serveur injoignable : on quitte quand même */
+    }
+    removeSeat(seat.matchID);
+    setUrlMatch(null);
+    setSeat(null);
   }
-  return <Lobby initialCode={urlMatch} onSeated={setSeat} />;
+
+  if (seat) {
+    return (
+      <GangClient
+        matchID={seat.matchID}
+        playerID={seat.playerID}
+        credentials={seat.credentials}
+        onLeave={leave}
+        fetchPlayers={() => lobby.getMatch('the-gang', seat.matchID).then((m) => m.players)}
+      />
+    );
+  }
+  return <Lobby key={urlMatch} initialCode={urlMatch} onSeated={setSeat} />;
 }
 
 function Lobby({ initialCode, onSeated }) {

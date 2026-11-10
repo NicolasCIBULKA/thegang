@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ROUNDS, WINS_NEEDED, isDarkChip } from '../game/game.js';
 import { MODES } from '../game/specialCards.js';
 import { Card, CardRow, Chip } from './parts.jsx';
@@ -28,8 +28,26 @@ function VaultTrack({ vaults, alarmsToLose }) {
   );
 }
 
-function WaitingRoom({ matchData, matchID }) {
+function WaitingRoom({ matchData: liveData, matchID, onLeave, fetchPlayers }) {
   const [copied, setCopied] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  // Le serveur ne prévient pas quand un joueur quitte le salon : on relit la liste des places toutes les 2 s.
+  const [polled, setPolled] = useState(null);
+  useEffect(() => {
+    if (!fetchPlayers) return undefined;
+    let alive = true;
+    const refresh = () =>
+      fetchPlayers()
+        .then((players) => alive && setPolled(players))
+        .catch(() => {});
+    refresh();
+    const id = setInterval(refresh, 2000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [fetchPlayers ? matchID : null]);
+  const matchData = polled || liveData;
   const link = `${window.location.origin}${window.location.pathname}?match=${matchID}`;
   const joined = matchData.filter((p) => p.name).length;
 
@@ -62,6 +80,18 @@ function WaitingRoom({ matchData, matchID }) {
           {copied ? 'Lien copié !' : 'Copier le lien d’invitation'}
         </button>
       </div>
+      {onLeave && (
+        <button
+          className="btn ghost leave-btn"
+          disabled={leaving}
+          onClick={() => {
+            setLeaving(true);
+            onLeave();
+          }}
+        >
+          {leaving ? 'Départ…' : 'Quitter le salon'}
+        </button>
+      )}
     </div>
   );
 }
@@ -77,7 +107,10 @@ export default function Board(props) {
   const names = Object.fromEntries(matchData.map((p) => [String(p.id), p.name || `Joueur ${p.id + 1}`]));
   const allSeated = matchData.length > 0 && matchData.every((p) => p.name);
 
-  if (!allSeated) return <WaitingRoom matchData={matchData} matchID={matchID} />;
+  if (!allSeated)
+    return (
+      <WaitingRoom matchData={matchData} matchID={matchID} onLeave={props.onLeave} fetchPlayers={props.fetchPlayers} />
+    );
 
   const n = ctx.playOrder.length;
   const round = ROUNDS[G.round];
