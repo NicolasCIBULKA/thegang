@@ -831,3 +831,16 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
 @media (max-width: 420px) { .match-settings > div { grid-template-columns: 1fr; gap: 2px; } }
 .join-preview .match-settings > div { grid-template-columns: 1fr; gap: 2px; }
 .join-preview .match-settings { gap: 10px; }
+
+/* Tutoriel : rappel quand une action hors scénario est refusée */
+.mm-nudge {
+  font-style: normal; font-family: var(--sans); font-size: 13px; font-weight: 600;
+  color: var(--ivory); background: var(--velvet); border-radius: 6px; padding: 6px 9px;
+  animation: nudge-shake 0.35s ease-out;
+}
+@keyframes nudge-shake {
+  0%, 100% { transform: none; }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) { .mm-nudge { animation: none; } }

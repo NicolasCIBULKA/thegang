@@ -21,6 +21,10 @@ const DEAL = {
   community: [c(13, 'S'), c(9, 'H'), c(4, 'C'), c(2, 'C'), c(11, 'D')],
 };
 
+// Seule action permise pendant les étapes « à vous de jouer » : prendre le 3★ au centre, ou voler celui de Bob.
+const TAKE_TOP = { takeChip: (stars, from = 'middle') => from === 'middle' && stars === 3 };
+const STEAL_FROM_BOB = { takeChip: (stars, from) => from === '1' && stars === 3 };
+
 // Coups des bots au début d'une étape : [joueur, jeton].
 const BOTS_LOW = [
   ['1', 1],
@@ -44,6 +48,7 @@ const STEPS = [
     bots: BOTS_LOW,
     text: 'Bob prend le 1★ et Chloé le 2★ : ils pensent être derrière vous. Ils ont raison.',
     task: 'À vous : prenez le jeton 3★ au centre.',
+    allow: TAKE_TOP,
     done: (G) => G.round >= 1,
   },
   {
@@ -55,6 +60,7 @@ const STEPS = [
     bots: [['1', 3]],
     text: 'Bob s’est jeté sur le 3★… Il se croit peut-être fort avec ce roi sur la table. Mais votre paire d’As vaut mieux.',
     task: 'Volez-lui son jeton : cliquez sur « Voler » à côté de Bob.',
+    allow: STEAL_FROM_BOB,
     done: (G) => G.chips['0'].yellow === 3,
   },
   {
@@ -66,6 +72,7 @@ const STEPS = [
     bots: BOTS_LOW,
     text: 'La turn : une quatrième carte commune. Ce 2♣ a peut-être aidé quelqu’un… mais personne ne bat une paire d’As ici.',
     task: 'Gardez votre rang : prenez le 3★.',
+    allow: TAKE_TOP,
     done: (G) => G.round >= 3,
   },
   {
@@ -73,6 +80,7 @@ const STEPS = [
     bots: BOTS_LOW,
     text: 'La river, dernière carte. Les jetons rouges sont les seuls qui comptent : ils fixent l’ordre de l’abattage.',
     task: 'Prenez le 3★ rouge.',
+    allow: TAKE_TOP,
     done: (G) => G.phase === 'reveal',
   },
   {
@@ -121,6 +129,9 @@ export default function TutorialMode() {
 
   const [G, setG] = useState(null);
   const [stepIndex, setStepIndex] = useState(0);
+  // Rappel affiché quand le joueur tente une action hors scénario (elle est bloquée).
+  const [nudge, setNudge] = useState(null);
+  useEffect(() => setNudge(null), [stepIndex]);
   const step = STEPS[stepIndex];
   const timers = useRef([]);
 
@@ -161,7 +172,23 @@ export default function TutorialMode() {
       ? null
       : [{ label: 'Suivant', primary: true, onClick: () => setStepIndex((i) => i + 1) }];
 
+  // Filtre des coups du joueur : le tutoriel suit une donne et des coups de bots prévus à l'avance,
+  // donc toute action autre que celle demandée est refusée (sinon la partie sortirait du scénario).
+  const guard = (move, args) => {
+    const rule = step.allow?.[move];
+    if (rule && rule(...args)) return true;
+    setNudge({
+      id: Date.now(),
+      text: step.task
+        ? 'Pas cette fois : suivez la consigne ci-dessus.'
+        : 'Pas encore : lisez la note, puis cliquez sur « Suivant ».',
+    });
+    return false;
+  };
+
   const coach = {
+    guard,
+    nudge,
     key: `tuto-${stepIndex}`,
     text: step.text,
     task: step.task,

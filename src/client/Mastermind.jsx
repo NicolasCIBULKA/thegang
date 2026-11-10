@@ -91,6 +91,11 @@ export default function Mastermind({ G, ctx, names, coach }) {
           </span>
           {words}
           {done && coach.task && <span className="mm-task">{coach.task}</span>}
+          {coach.nudge && (
+            <span key={coach.nudge.id} className="mm-nudge" role="status">
+              {coach.nudge.text}
+            </span>
+          )}
           {done && coach.next && (
             <span className="mm-actions">
               {coach.next.map((b) => (

@@ -98,7 +98,12 @@ function WaitingRoom({ matchData: liveData, matchID, onLeave, fetchPlayers, mode
 // ---------- Plateau ----------
 
 export default function Board(props) {
-  const { G, ctx, moves, playerID, matchID, isConnected } = props;
+  const { G, ctx, playerID, matchID, isConnected } = props;
+  // Tutoriel : chaque coup passe d'abord par le guide, qui peut le refuser s'il sort du scénario.
+  const guard = props.coach?.guard;
+  const moves = guard
+    ? Object.fromEntries(Object.entries(props.moves).map(([k, fn]) => [k, (...a) => guard(k, a) && fn(...a)]))
+    : props.moves;
   // Téléphone : les cartes actives et le registre sont rangés dans un panneau qu'on ouvre à la demande.
   const [sheetOpen, setSheetOpen] = useState(false);
   // En mode solo (sans serveur), boardgame.io ne fournit pas matchData : SoloMode passe soloPlayers.
