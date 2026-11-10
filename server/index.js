@@ -12,7 +12,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 8000;
 
 const origins = [Origins.LOCALHOST];
-if (process.env.PUBLIC_URL) origins.push(process.env.PUBLIC_URL);
+// Adresse publique du site : PUBLIC_URL, ou celle que Render fournit automatiquement.
+const publicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL;
+if (publicUrl) origins.push(publicUrl.replace(/\/$/, ''));
 
 const server = Server({ games: [TheGang], origins });
 

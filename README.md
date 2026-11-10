@@ -102,7 +102,22 @@ Pas encore implémentés : chat intégré (prévu pour jouer en appel vocal), va
 
 ## Déploiement
 
-N'importe quel hébergeur Node (Render, Fly.io, Railway…) :
+### Gratuit, depuis GitHub : Render
+
+Le dépôt contient un `render.yaml` prêt à l'emploi.
+
+1. Créez un compte sur [render.com](https://render.com) en vous connectant avec GitHub.
+2. **New › Blueprint**, choisissez ce dépôt, puis **Apply**.
+3. Le jeu est en ligne à l'adresse `https://thegang-xxxx.onrender.com` affichée par Render.
+   Chaque `git push` sur `main` le redéploie automatiquement.
+
+Limites de l'offre gratuite : le service s'endort après 15 minutes sans visite et met environ une minute à se
+réveiller ; les parties en cours sont perdues à l'endormissement ou au redéploiement (elles sont en mémoire).
+Tant que des joueurs sont connectés, il reste éveillé.
+
+### Sur votre propre serveur
+
+N'importe quel hébergeur Node qui accepte les WebSocket (VPS, Fly.io, Railway…) :
 
 ```bash
 npm install && npm run build

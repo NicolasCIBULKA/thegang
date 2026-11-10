@@ -1,0 +1,13 @@
+# Déploiement sur Render (offre gratuite) : Dashboard › New › Blueprint › choisir ce dépôt.
+services:
+  - type: web
+    name: thegang
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22
