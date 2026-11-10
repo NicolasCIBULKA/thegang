@@ -227,13 +227,16 @@ function Lobby({ initialCode, onSeated }) {
 
       {error && <p className="error">{error}</p>}
 
-      <p className="solo-hint muted">
-        Seul pour tester ?{' '}
-        <a href={`?solo=${numPlayers}&mode=${mode}`}>
-          Jouer en mode solo à {numPlayers} joueurs ({MODES[mode].label})
-        </a>
-        , en contrôlant tout le monde depuis cette page, sans serveur.
-      </p>
+      {/* Lien vers le mode solo : affiché seulement en développement (npm run dev), pas sur le site déployé. */}
+      {import.meta.env.DEV && (
+        <p className="solo-hint muted">
+          Seul pour tester ?{' '}
+          <a href={`?solo=${numPlayers}&mode=${mode}`}>
+            Jouer en mode solo à {numPlayers} joueurs ({MODES[mode].label})
+          </a>
+          , en contrôlant tout le monde depuis cette page, sans serveur.
+        </p>
+      )}
     </div>
   );
 }
