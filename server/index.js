@@ -39,7 +39,21 @@ if (process.env.DATA_DIR) {
 
 const server = Server({ games: [TheGang], origins, ...(db ? { db } : {}) });
 
-// Le serveur sert aussi le client compilé (dist/) dès qu'il existe :
+// Certains hébergeurs (préréglage « Express » d'Hostinger) lancent directement ce fichier sans exécuter
+// « npm run build » : si l'interface n'est pas encore compilée, on la compile ici, une fois, au démarrage.
+// Les variables VITE_* (ex. VITE_SOCKET_TRANSPORTS) sont lues dans l'environnement à ce moment-là.
+if (!fs.existsSync(path.join(DIST, 'index.html')) && process.env.NODE_ENV !== 'development') {
+  console.log('Interface non compilée : compilation en cours…');
+  try {
+    const { build } = await import('vite');
+    await build({ root: path.resolve(__dirname, '..'), logLevel: 'warn' });
+    console.log('Interface compilée.');
+  } catch (err) {
+    console.error('Échec de la compilation de l’interface :', err);
+  }
+}
+
+// Le serveur sert aussi le client compilé (dist/) :
 // c'est le cas en production, quel que soit l'hébergeur et la façon dont il lance le serveur.
 if (fs.existsSync(path.join(DIST, 'index.html'))) {
   server.app.use(serve(DIST));

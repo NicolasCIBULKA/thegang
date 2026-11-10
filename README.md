@@ -122,9 +122,10 @@ Socket.IO), ce qui marche très bien pour un jeu au tour par tour (≈ 0,2 s par
 
 1. hPanel › **Sites web › Ajouter un site web › Node.js web app**, puis **Importer un dépôt Git** et choisir ce dépôt.
 2. Réglages :
+   - Préréglage de framework : **Express** (pas « Vite », qui ne déploierait que l'interface, sans serveur) ;
    - Version de Node : **22** ;
-   - Commande de build : `npm run build` ;
    - Fichier d'entrée : `server/index.js`.
+   Ce préréglage ne lance pas `npm run build` : le serveur compile l'interface lui-même au premier démarrage.
 3. Variables d'environnement :
    - `VITE_SOCKET_TRANSPORTS` = `polling` (le navigateur ne tente pas de WebSocket voué à échouer) ;
    - `DATA_DIR` = `~/thegang-data` (les parties sont sauvegardées sur disque et survivent aux redémarrages).
