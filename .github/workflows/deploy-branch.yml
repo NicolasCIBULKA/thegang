@@ -1,0 +1,44 @@
+# À chaque push sur main : tests, compilation de l'interface, puis publication de la branche « deploy »
+# (le code + dist/ déjà compilé). Les hébergeurs qui ne peuvent pas compiler eux-mêmes (Hostinger)
+# déploient cette branche : il n'y a plus qu'à lancer server/index.js.
+name: Branche deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-branch
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+
+      # Hostinger n'accepte pas les WebSocket entrants : l'interface utilise directement le transport HTTP.
+      - run: npm run build
+        env:
+          VITE_SOCKET_TRANSPORTS: polling
+
+      - name: Publier la branche deploy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B deploy
+          git add -f dist
+          git commit -m "Build de ${GITHUB_SHA::7} (main)"
+          git push -f origin deploy

@@ -120,15 +120,18 @@ Tant que des joueurs sont connectés, il reste éveillé.
 Ces offres n'acceptent pas les WebSocket entrants : le jeu passe alors par des requêtes HTTP (long polling de
 Socket.IO), ce qui marche très bien pour un jeu au tour par tour (≈ 0,2 s par coup en test).
 
-1. hPanel › **Sites web › Ajouter un site web › Node.js web app**, puis **Importer un dépôt Git** et choisir ce dépôt.
+Hostinger ne peut pas compiler l'interface lui-même (Vite y plante au démarrage). Une action GitHub
+(`.github/workflows/deploy-branch.yml`) s'en charge à chaque push sur `main` et publie le résultat, déjà compilé,
+sur la branche **`deploy`** : c'est cette branche qu'Hostinger déploie.
+
+1. hPanel › **Sites web › Ajouter un site web › Node.js web app**, puis **Importer un dépôt Git** et choisir ce dépôt,
+   **branche `deploy`**.
 2. Réglages :
    - Préréglage de framework : **Express** (pas « Vite », qui ne déploierait que l'interface, sans serveur) ;
    - Version de Node : **22** ;
    - Fichier d'entrée : `server/index.js`.
-   Ce préréglage ne lance pas `npm run build` : le serveur compile l'interface lui-même au premier démarrage.
-3. Variables d'environnement :
-   - `VITE_SOCKET_TRANSPORTS` = `polling` (le navigateur ne tente pas de WebSocket voué à échouer) ;
-   - `DATA_DIR` = `~/thegang-data` (les parties sont sauvegardées sur disque et survivent aux redémarrages).
+3. Variable d'environnement : `DATA_DIR` = `~/thegang-data` (les parties sont sauvegardées sur disque et survivent
+   aux redémarrages). Le transport HTTP est déjà intégré à la compilation de la branche `deploy`.
 4. **Déployer.** Chaque push sur `main` redéploie automatiquement.
 
 En cas de souci : onglets **Deployments** (journal de build) et **Runtime Logs** (journal du serveur) dans hPanel.
