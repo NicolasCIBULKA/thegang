@@ -4,6 +4,7 @@ import { MODES } from '../game/specialCards.js';
 import { Card, CardRow, Chip } from './parts.jsx';
 import { ActiveCards, GuessPanel, GuessResult, Feed, Upcoming } from './Specials.jsx';
 import Mastermind from './Mastermind.jsx';
+import MatchSettings from './MatchSettings.jsx';
 
 // ---------- Petits composants ----------
 
@@ -28,7 +29,7 @@ function VaultTrack({ vaults, alarmsToLose }) {
   );
 }
 
-function WaitingRoom({ matchData: liveData, matchID, onLeave, fetchPlayers }) {
+function WaitingRoom({ matchData: liveData, matchID, onLeave, fetchPlayers, mode, extensions }) {
   const [copied, setCopied] = useState(false);
   const [leaving, setLeaving] = useState(false);
   // Le serveur ne prévient pas quand un joueur quitte le salon : on relit la liste des places toutes les 2 s.
@@ -64,9 +65,7 @@ function WaitingRoom({ matchData: liveData, matchID, onLeave, fetchPlayers }) {
   return (
     <div className="waiting">
       <h2>En attente de l'équipe</h2>
-      <p className="muted">
-        {joined} / {matchData.length} joueurs
-      </p>
+      <MatchSettings mode={mode} numPlayers={matchData.length} seated={joined} extensions={extensions} />
       <ul className="seat-list">
         {matchData.map((p) => (
           <li key={p.id} className={p.name ? 'filled' : ''}>
@@ -109,7 +108,14 @@ export default function Board(props) {
 
   if (!allSeated)
     return (
-      <WaitingRoom matchData={matchData} matchID={matchID} onLeave={props.onLeave} fetchPlayers={props.fetchPlayers} />
+      <WaitingRoom
+        matchData={matchData}
+        matchID={matchID}
+        onLeave={props.onLeave}
+        fetchPlayers={props.fetchPlayers}
+        mode={G?.mode}
+        extensions={G?.extensions}
+      />
     );
 
   const n = ctx.playOrder.length;

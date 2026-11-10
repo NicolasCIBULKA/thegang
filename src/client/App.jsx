@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Client } from 'boardgame.io/react';
 import { SocketIO } from 'boardgame.io/multiplayer';
 import { LobbyClient } from 'boardgame.io/client';
@@ -7,6 +7,7 @@ import Board from './Board.jsx';
 import SoloMode from './SoloMode.jsx';
 import TutorialMode from './TutorialMode.jsx';
 import { MODES } from '../game/specialCards.js';
+import MatchSettings from './MatchSettings.jsx';
 
 // En dev, le serveur tourne à part sur le port 8000 ; en prod il sert aussi le client.
 export const SERVER = import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin;
@@ -114,6 +115,28 @@ function Lobby({ initialCode, onSeated }) {
     }
   });
   const [code, setCode] = useState(initialCode);
+  // Aperçu du salon visé (paramètres, places libres) dès qu'un code est saisi ou reçu par lien.
+  const [preview, setPreview] = useState(null);
+  useEffect(() => {
+    const id = code.trim();
+    if (!id) {
+      setPreview(null);
+      return undefined;
+    }
+    let alive = true;
+    const timer = setTimeout(() => {
+      lobby
+        .getMatch('the-gang', id)
+        .then((m) => alive && setPreview({ ok: true, match: m }))
+        .catch(() => alive && setPreview({ ok: false }));
+    }, 350);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [code]);
+  const previewSeated = preview?.ok ? preview.match.players.filter((p) => p.name).length : 0;
+  const previewFull = preview?.ok && previewSeated >= preview.match.players.length;
   const [numPlayers, setNumPlayers] = useState(4);
   const [mode, setMode] = useState('basique');
   const [error, setError] = useState('');
@@ -141,7 +164,7 @@ function Lobby({ initialCode, onSeated }) {
     setBusy(true);
     setError('');
     try {
-      const { matchID } = await lobby.createMatch('the-gang', { numPlayers, setupData: { mode } });
+      const { matchID } = await lobby.createMatch('the-gang', { numPlayers, setupData: { mode, extensions: [] } });
       await join(matchID);
     } catch (err) {
       setError('Impossible de créer la partie. Le serveur est-il lancé ?');
@@ -235,7 +258,27 @@ function Lobby({ initialCode, onSeated }) {
             <span>Code du salon</span>
             <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="ex. oDteOzwpoWw" />
           </label>
-          <button className="btn" disabled={!canSubmit || !code.trim()}>
+          {preview?.ok && (
+            <div className="join-preview">
+              <MatchSettings
+                mode={preview.match.setupData?.mode}
+                numPlayers={preview.match.players.length}
+                seated={previewSeated}
+                extensions={preview.match.setupData?.extensions}
+              />
+              {previewSeated > 0 && (
+                <p className="join-who">
+                  Déjà là :{' '}
+                  {preview.match.players
+                    .filter((p) => p.name)
+                    .map((p) => p.name)
+                    .join(', ')}
+                </p>
+              )}
+            </div>
+          )}
+          {preview && !preview.ok && <p className="error small">Aucun salon ne correspond à ce code.</p>}
+          <button className="btn" disabled={!canSubmit || !code.trim() || previewFull || preview?.ok === false}>
             Rejoindre
           </button>
         </form>

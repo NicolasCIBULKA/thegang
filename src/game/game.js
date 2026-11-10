@@ -5,7 +5,7 @@ const ALL_PLAYERS_ACTIVE = { all: null };
 
 import { createDeck } from './cards.js';
 import { bestHand, compareScores, handCategory, CATEGORY_NAMES } from './handEval.js';
-import { MODES, COMPLICES, SPECIAL_JACK } from './specialCards.js';
+import { MODES, COMPLICES, SPECIAL_JACK, EXTENSIONS } from './specialCards.js';
 
 // Les 4 tours d'un casse, la couleur de jetons associée et le nombre de cartes communes visibles.
 export const ROUNDS = [
@@ -417,13 +417,16 @@ function setReady({ G, playerID }, value = true) {
 // ---------- Définition du jeu ----------
 
 // forced (tests uniquement) : impose les cartes spéciales du premier casse.
-export function createSetup(mode = 'basique', forced = null) {
+export function createSetup(mode = 'basique', forced = null, extensions = []) {
   return ({ ctx, random }) => {
     const m = MODES[mode] ? mode : 'basique';
+    // Extensions choisies à la création (seules celles qui existent sont gardées)
+    const ext = (Array.isArray(extensions) ? extensions : []).filter((id) => EXTENSIONS[id]);
     const effractionIds = m === 'avance' ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] : [2, 3, 4, 5, 6, 7, 8, 9, 10];
     const G = {
       mode: m,
       alarmsToLose: m === 'gangster' ? 2 : 3,
+      extensions: ext,
       heist: 0,
       vaults: { success: 0, alarm: 0 },
       permanent: [],
@@ -458,7 +461,7 @@ export const TheGang = {
   maxPlayers: 6,
 
   // setupData vient du lobby : { mode }
-  setup: (context, setupData) => createSetup(setupData?.mode)(context),
+  setup: (context, setupData) => createSetup(setupData?.mode, null, setupData?.extensions)(context),
 
   turn: {
     activePlayers: ALL_PLAYERS_ACTIVE,

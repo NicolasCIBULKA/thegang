@@ -49,3 +49,8 @@ export const MODES = {
 
 // Valet spécial du Complice n°7 : compte comme un V, sans couleur.
 export const SPECIAL_JACK = { rank: 11, suit: 'X' };
+
+// Extensions officielles prises en charge. Vide pour l'instant : chaque extension ajoutée ici
+// apparaît automatiquement dans les paramètres affichés au lobby et en salle d'attente.
+// Forme : { id: { label: 'Jokers & Variantes', text: 'Résumé en une phrase.' } }
+export const EXTENSIONS = {};
