@@ -59,10 +59,13 @@ describe('résolution du coffre', () => {
 });
 
 describe('déroulement de la partie', () => {
+  let matchCount = 0;
   function setup(n = 3) {
     const multiplayer = Local();
+    // Identifiant unique : les parties locales de boardgame.io sont partagées par matchID.
+    const matchID = `test-${++matchCount}`;
     const clients = Array.from({ length: n }, (_, i) =>
-      Client({ game: TheGang, numPlayers: n, playerID: String(i), multiplayer }),
+      Client({ game: TheGang, numPlayers: n, playerID: String(i), matchID, multiplayer }),
     );
     clients.forEach((cl) => cl.start());
     return clients;
@@ -84,10 +87,35 @@ describe('déroulement de la partie', () => {
     expect(G.chips['0'].white).toBeNull();
     expect(G.chips['1'].white).toBe(3);
     expect(G.middle).toEqual([1, 2]);
+    expect(G.lastSteal).toMatchObject({ thief: '1', victim: '0', stars: 3 });
   });
 
-  it('on ne peut pas être prêt sans jeton', () => {
+  it('voler en ayant déjà un jeton remet l’ancien au centre', () => {
+    const [p0, p1] = setup();
+    p0.moves.takeChip(3);
+    p1.moves.takeChip(1);
+    p1.moves.takeChip(3, '0');
+    const { G } = p0.getState();
+    expect(G.chips['1'].white).toBe(3);
+    expect(G.chips['0'].white).toBeNull();
+    expect(G.middle).toEqual([1, 2]);
+  });
+
+  it('la manche passe automatiquement quand tous les jetons sont pris', () => {
+    const [p0, p1, p2] = setup();
+    p0.moves.takeChip(1);
+    p1.moves.takeChip(2);
+    expect(p0.getState().G.round).toBe(0);
+    p2.moves.takeChip(3);
+    const { G } = p0.getState();
+    expect(G.round).toBe(1);
+    expect(G.community).toHaveLength(3);
+    expect(G.middle).toEqual([1, 2, 3]);
+  });
+
+  it('« prêt » est refusé pendant les enchères', () => {
     const [p0] = setup();
+    p0.moves.takeChip(1);
     p0.moves.setReady(true);
     expect(p0.getState().G.ready['0']).toBe(false);
   });
@@ -96,7 +124,6 @@ describe('déroulement de la partie', () => {
     const clients = setup();
     for (let round = 0; round < 4; round++) {
       clients.forEach((cl, i) => cl.moves.takeChip(i + 1));
-      clients.forEach((cl) => cl.moves.setReady(true));
     }
     const { G } = clients[0].getState();
     expect(G.phase).toBe('reveal');
@@ -119,7 +146,6 @@ describe('déroulement de la partie', () => {
     while (!clients[0].getState().ctx.gameover && guard++ < 10) {
       for (let round = 0; round < 4; round++) {
         clients.forEach((cl, i) => cl.moves.takeChip(i + 1));
-        clients.forEach((cl) => cl.moves.setReady(true));
       }
       if (!clients[0].getState().ctx.gameover) clients.forEach((cl) => cl.moves.setReady(true));
     }

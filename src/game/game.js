@@ -41,6 +41,7 @@ function startHeist(G, ctx, random) {
   G.phase = 'bidding';
   G.middle = allPlayers(ctx).map((_, i) => i + 1);
   G.result = null;
+  G.lastSteal = null;
   G.heist += 1;
 }
 
@@ -89,6 +90,7 @@ function advance(G, ctx) {
     for (let i = 0; i < n; i++) G.community.push(G.deck.pop());
     G.middle = allPlayers(ctx).map((_, i) => i + 1);
     resetReady(G);
+    G.lastSteal = null;
     G.log.push(`${ROUNDS[G.round].label} : nouvelles cartes révélées.`);
     return;
   }
@@ -114,15 +116,21 @@ function takeChip({ G, ctx, playerID }, stars, from = 'middle') {
     const idx = G.middle.indexOf(stars);
     if (idx === -1) return INVALID_MOVE;
     G.middle.splice(idx, 1);
+    G.lastSteal = null;
   } else {
+    // Vol : le jeton passe chez le voleur, la victime n'a plus rien.
     if (from === playerID || !G.chips[from]) return INVALID_MOVE;
     if (G.chips[from][color] !== stars) return INVALID_MOVE;
     G.chips[from][color] = null;
+    G.lastSteal = { thief: playerID, victim: from, stars, color, id: (G.lastSteal?.id || 0) + 1 };
   }
+  // L'ancien jeton du joueur retourne au centre.
   if (mine != null) G.middle.push(mine);
   G.middle.sort((a, b) => a - b);
   G.chips[playerID][color] = stars;
-  resetReady(G);
+
+  // Dès que tout le monde a un jeton de la couleur en cours, on passe à l'étape suivante.
+  if (allPlayers(ctx).every((pid) => G.chips[pid][color] != null)) advance(G, ctx);
 }
 
 function returnChip({ G, playerID }) {
@@ -133,16 +141,10 @@ function returnChip({ G, playerID }) {
   G.chips[playerID][color] = null;
   G.middle.push(mine);
   G.middle.sort((a, b) => a - b);
-  resetReady(G);
 }
 
-function setReady({ G, ctx, playerID }, value = true) {
-  if (G.phase === 'bidding') {
-    if (value && G.chips[playerID][currentColor(G)] == null) return INVALID_MOVE;
-    G.ready[playerID] = value;
-    if (allPlayers(ctx).every((pid) => G.ready[pid])) advance(G, ctx);
-    return;
-  }
+// « Prêt » ne sert plus qu'à enchaîner le casse suivant après la révélation.
+function setReady({ G, playerID }, value = true) {
   if (G.phase === 'reveal') {
     G.ready[playerID] = value;
     // endIf termine la partie avant ce point si elle est gagnée/perdue

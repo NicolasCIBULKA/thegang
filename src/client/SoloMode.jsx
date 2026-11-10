@@ -25,6 +25,9 @@ export default function SoloMode({ numPlayers }) {
     [n],
   );
 
+  // Identifiant unique : boardgame.io partage l'état des parties locales par matchID.
+  const matchID = useMemo(() => `solo-${n}-${Date.now()}`, [n]);
+
   const matchData = useMemo(
     () => Array.from({ length: n }, (_, i) => ({ id: i, name: NAMES[i], isConnected: true })),
     [n],
@@ -52,7 +55,7 @@ export default function SoloMode({ numPlayers }) {
       {/* Tous les joueurs restent montés pour partager le même état local ; seul l'actif est visible. */}
       {matchData.map((p) => (
         <div key={p.id} hidden={String(p.id) !== active}>
-          <SoloClient playerID={String(p.id)} matchID="solo" soloPlayers={matchData} />
+          <SoloClient playerID={String(p.id)} matchID={matchID} soloPlayers={matchData} />
         </div>
       ))}
     </div>

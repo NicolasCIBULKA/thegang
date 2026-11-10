@@ -211,6 +211,26 @@ h1, h2, .brand { font-family: 'Bebas Neue', Impact, sans-serif; letter-spacing: 
 .chip.clickable { cursor: pointer; transition: transform 0.12s; }
 .chip.clickable:hover { transform: translateY(-3px) scale(1.05); }
 
+/* ---------- Vol de jeton ---------- */
+.steal-btn {
+  display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px;
+  background: transparent; border: 1px dashed var(--line); border-radius: 999px;
+  color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.steal-btn:hover { border-color: var(--ko); background: rgba(224,85,69,0.12); }
+.steal-btn:hover .chip { transform: rotate(-12deg); }
+.steal-btn .chip { transition: transform 0.12s; }
+.steal-label { color: var(--muted); }
+.steal-btn:hover .steal-label { color: var(--ko); }
+
+.steal-notice {
+  background: rgba(0,0,0,0.35); border-radius: 8px; padding: 6px 12px; font-size: 14px;
+  animation: pop 0.25s ease-out;
+}
+.steal-notice.victim { background: rgba(224,85,69,0.85); color: #fff; font-weight: 700; }
+@keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: none; opacity: 1; } }
+
 /* ---------- Révélation & fin ---------- */
 .reveal { width: 100%; max-width: 620px; background: rgba(0,0,0,0.35); border-radius: 12px; padding: 16px; }
 .reveal h2 { margin: 0; font-size: 34px; text-align: center; }

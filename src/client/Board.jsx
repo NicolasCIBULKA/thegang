@@ -159,10 +159,12 @@ export default function Board(props) {
           ))}
         </div>
 
+        {bidding && G.lastSteal && <StealNotice steal={G.lastSteal} names={names} me={playerID} />}
+
         {bidding && (
           <div className="middle">
             <div className="middle-label">
-              Jetons {round.label.toLowerCase()} — {G.middle.length ? 'cliquez pour prendre' : 'tous distribués'}
+              Jetons {round.label.toLowerCase()} : prenez-en un au centre, ou volez celui d'un autre joueur
             </div>
             <div className="middle-chips">
               {G.middle.map((s) => (
@@ -204,14 +206,7 @@ export default function Board(props) {
               <button className="btn" disabled={myChip == null} onClick={() => moves.returnChip()}>
                 Rendre mon jeton
               </button>
-              <button
-                className={`btn primary ${G.ready[playerID] ? 'pressed' : ''}`}
-                disabled={myChip == null}
-                onClick={() => moves.setReady(!G.ready[playerID])}
-              >
-                {G.ready[playerID] ? 'Prêt ✓ (annuler)' : 'Je suis prêt'}
-              </button>
-              <ReadyHint G={G} ctx={ctx} />
+              <RoundHint G={G} ctx={ctx} color={color} />
             </>
           )}
           {reveal && !ctx.gameover && (
@@ -228,12 +223,25 @@ export default function Board(props) {
   );
 }
 
-function ReadyHint({ G, ctx }) {
-  const ready = ctx.playOrder.filter((pid) => G.ready[pid]).length;
+function RoundHint({ G, ctx, color }) {
+  const holding = ctx.playOrder.filter((pid) => G.chips[pid][color] != null).length;
   return (
     <span className="muted small">
-      {ready}/{ctx.playOrder.length} prêts — la manche avance quand tout le monde a un jeton et est prêt.
+      {holding}/{ctx.playOrder.length} jetons pris. L'étape suivante démarre dès que chacun en a un.
     </span>
+  );
+}
+
+function StealNotice({ steal, names, me }) {
+  const chip = `${steal.stars}★`;
+  let text;
+  if (steal.victim === me) text = `${names[steal.thief]} vous a volé votre jeton ${chip} ! Reprenez-en un.`;
+  else if (steal.thief === me) text = `Vous avez volé le jeton ${chip} de ${names[steal.victim]}.`;
+  else text = `${names[steal.thief]} a volé le jeton ${chip} de ${names[steal.victim]}.`;
+  return (
+    <div key={steal.id} className={`steal-notice ${steal.victim === me ? 'victim' : ''}`}>
+      {text}
+    </div>
   );
 }
 
@@ -267,7 +275,10 @@ function Seat({ pid, name, online, G, color, bidding, onSteal }) {
       {bidding && (
         <div className="seat-current">
           {chip != null ? (
-            <Chip color={color} stars={chip} size="md" onClick={onSteal} title="Prendre ce jeton" />
+            <button className="steal-btn" onClick={onSteal} title={`Voler le jeton de ${name}`}>
+              <Chip color={color} stars={chip} size="md" />
+              <span className="steal-label">Voler</span>
+            </button>
           ) : (
             <Chip color={color} faded size="md" title="Pas encore de jeton" />
           )}

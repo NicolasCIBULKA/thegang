@@ -42,10 +42,9 @@ server/index.js    serveur boardgame.io (+ fichiers statiques en production)
 ## Règles implémentées
 
 - Chaque joueur reçoit 2 cartes. 4 manches : pré-flop (jetons blancs), flop (+3 cartes, jaunes), turn (+1, orange), river (+1, rouges).
-- À chaque manche, chacun prend un jeton : au centre ou **chez un autre joueur** (il en est privé), et peut rendre le sien.
-  Un jeton déjà tenu repart au centre quand on en prend un autre.
-- Pas de tours de jeu : tout le monde agit en même temps. La manche avance quand **tous ont un jeton et ont cliqué « Je suis prêt »**.
-  Tout mouvement de jeton annule les « prêt » (comme autour d'une vraie table, on peut encore changer d'avis).
+- À chaque manche, chacun prend un jeton : au centre, ou en le **volant à un autre joueur** (bouton « Voler »).
+  La victime se retrouve sans jeton et en est prévenue. Un jeton déjà tenu repart au centre quand on en prend un autre.
+- Pas de tours de jeu : tout le monde agit en même temps. **Dès que chaque joueur a un jeton, l'étape suivante démarre**.
 - À la fin de la river, les mains sont comparées dans l'ordre des jetons rouges. Les égalités sont acceptées dans les deux sens.
 - 3 casses réussis : victoire. 3 alarmes : défaite.
 - Chaque joueur ne reçoit du serveur que ses propres cartes (`playerView`), donc impossible de tricher via les outils du navigateur.
