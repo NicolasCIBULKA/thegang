@@ -47,8 +47,6 @@ const needsBuild = !fs.existsSync(path.join(DIST, 'index.html')) && process.env.
 let building = false;
 let buildError = null;
 
-const escapeHtml = (t) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-
 const WAIT_PAGE = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="5">
 <title>The Gang — préparation</title></head>
@@ -61,12 +59,11 @@ server.app.use(async (ctx, next) => {
     ctx.status = 503;
     ctx.set('Retry-After', '5');
     ctx.type = 'html';
+    // Le détail de l'erreur reste dans les journaux du serveur, jamais sur la page publique.
     ctx.body = buildError
       ? WAIT_PAGE.replace('<meta http-equiv="refresh" content="5">', '').replace(
           'Le cerveau prépare la table… La page se recharge toute seule.',
-          `La compilation a échoué.</p><pre style="text-align:left;white-space:pre-wrap;max-width:90vw;font-size:13px;color:#f2b9b9">${escapeHtml(
-            String(buildError?.stack || buildError).split('\n').slice(0, 12).join('\n'),
-          )}</pre><p>`,
+          'Le jeu est momentanément indisponible. Réessayez un peu plus tard.',
         )
       : WAIT_PAGE;
     return;
