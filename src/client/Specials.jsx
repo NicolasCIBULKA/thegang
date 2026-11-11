@@ -159,26 +159,55 @@ function SpecialistForm({ id, G, ctx, playerID, names, onUse, onCancel }) {
 
 // ---------- Devinette (Scan rétinien / Lecteur d'empreintes) ----------
 
-export function GuessPanel({ G, playerID, names, moves }) {
-  const { target, needRank, needCategory } = G.guess;
-  const [rank, setRank] = useState(14);
-  const [category, setCategory] = useState(1);
+const voteLabel = (v, guess) =>
+  [
+    guess.needRank && v.rank != null ? RANK_LABELS[v.rank] : null,
+    guess.needCategory && v.category != null ? CATEGORY_NAMES[v.category] : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+/**
+ * Contrôle de sécurité : chaque joueur (sauf la cible) choisit et valide sa réponse.
+ * Elle n'est retenue que lorsque tous les votes validés sont identiques.
+ */
+export function GuessPanel({ G, ctx, playerID, names, moves }) {
+  const guess = G.guess;
+  const { target, needRank, needCategory } = guess;
+  const votes = guess.votes || {};
+  const voters = ctx.playOrder.filter((pid) => pid !== target);
+  const mine = votes[playerID];
+  const [rank, setRank] = useState(mine?.rank ?? 14);
+  const [category, setCategory] = useState(mine?.category ?? 1);
   const isTarget = playerID === target;
+
+  const choice = { ...(needRank ? { rank } : {}), ...(needCategory ? { category } : {}) };
+  const choiceIsMine = mine && voteLabel(mine, guess) === voteLabel(choice, guess);
+  const cast = voters.filter((pid) => votes[pid]);
+  const labels = new Set(cast.map((pid) => voteLabel(votes[pid], guess)));
+  const allIn = cast.length === voters.length;
+  // Ce qu'il faut deviner, formulé pour les votants et pour la cible
+  const whatOf = (who) =>
+    needRank && needCategory
+      ? `une valeur parmi les cartes de ${who} et sa combinaison`
+      : needRank
+        ? `une valeur parmi les cartes de ${who}`
+        : `la combinaison de ${who}`;
+  const whatMine =
+    needRank && needCategory
+      ? 'une valeur parmi vos cartes et votre combinaison'
+      : needRank
+        ? 'une valeur parmi vos cartes'
+        : 'votre combinaison';
 
   return (
     <div className="guess-panel">
       <h3>Contrôle de sécurité</h3>
       {isTarget ? (
-        <p>
-          Vous avez le plus haut jeton rouge : l’équipe doit deviner {needRank && 'une valeur de vos cartes'}
-          {needRank && needCategory && ' et '}
-          {needCategory && 'votre combinaison'}. Vous ne pouvez pas répondre.
-        </p>
+        <p>Vous avez le plus haut jeton rouge : l’équipe doit deviner {whatMine}. Vous ne votez pas.</p>
       ) : (
         <>
-          <p>
-            Mettez-vous d’accord, puis l’un de vous valide pour <strong>{names[target]}</strong> :
-          </p>
+          <p>Devinez {whatOf(names[target])}. La réponse n’est retenue que si tout le monde valide le même choix.</p>
           <div className="guess-fields">
             {needRank && (
               <label>
@@ -205,10 +234,38 @@ export function GuessPanel({ G, playerID, names, moves }) {
               </label>
             )}
           </div>
-          <button className="btn primary" onClick={() => moves.submitGuess({ rank, category })}>
-            Valider la réponse de l’équipe
-          </button>
+          <div className="guess-buttons">
+            {choiceIsMine ? (
+              <button className="btn" onClick={() => moves.cancelVote()}>
+                Retirer mon vote
+              </button>
+            ) : (
+              <button className="btn primary" onClick={() => moves.voteGuess(choice)}>
+                {mine ? 'Changer mon vote' : 'Valider mon vote'}
+              </button>
+            )}
+          </div>
         </>
+      )}
+
+      <ul className="vote-list" aria-label="Votes de l’équipe">
+        {voters.map((pid) => (
+          <li key={pid} className={votes[pid] ? 'voted' : ''}>
+            <span className="vote-name">
+              {names[pid]}
+              {pid === playerID ? ' (vous)' : ''}
+            </span>
+            <span className="vote-value">{votes[pid] ? voteLabel(votes[pid], guess) : 'réfléchit…'}</span>
+          </li>
+        ))}
+      </ul>
+      {allIn && labels.size > 1 && (
+        <p className="vote-status ko">Les votes ne concordent pas : mettez-vous d’accord, puis changez votre vote.</p>
+      )}
+      {!allIn && cast.length > 0 && (
+        <p className="vote-status">
+          {cast.length}/{voters.length} votes validés.
+        </p>
       )}
     </div>
   );
@@ -221,7 +278,7 @@ export function GuessResult({ guess, names }) {
   if (guess.needCategory) parts.push(`« ${CATEGORY_NAMES[guess.answer.category]} »`);
   return (
     <p className={`guess-result ${guess.correct ? 'ok' : 'ko'}`}>
-      Devinette pour {names[guess.target]} : {parts.join(' et ')} —{' '}
+      Réponse de l’équipe pour {names[guess.target]} : {parts.join(' et ')} —{' '}
       {guess.correct ? 'correct !' : 'raté, l’alarme se déclenche.'}
     </p>
   );

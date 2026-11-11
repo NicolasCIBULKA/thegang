@@ -20,6 +20,9 @@ const G = (c) => c.getState().G;
 /** Chaque joueur i prend le jeton i+1 au centre. */
 const takeRound = (clients) => clients.forEach((c, i) => c.moves.takeChip(i + 1));
 const FACES = [11, 12, 13];
+/** Tous les joueurs sauf la cible votent la même réponse. */
+const voteAll = (clients, answer) =>
+  clients.forEach((cl, i) => String(i) !== G(cl).guess?.target && cl.moves.voteGuess(answer));
 
 describe('cartes Effraction', () => {
   it('1 · Ouverture facile : on commence directement au flop', () => {
@@ -93,10 +96,12 @@ describe('cartes Effraction', () => {
     for (let r = 0; r < 4; r++) takeRound(clients);
     expect(G(clients[0]).phase).toBe('guess');
     expect(G(clients[0]).guess.target).toBe('2'); // 3★ rouge
-    clients[2].moves.submitGuess({ rank: 2 }); // la cible ne peut pas deviner
-    expect(G(clients[0]).phase).toBe('guess');
+    clients[2].moves.voteGuess({ rank: 2 }); // la cible ne vote pas
+    expect(G(clients[0]).guess.votes['2']).toBeUndefined();
     const rank = G(clients[2]).hands['2'][0].rank;
-    clients[0].moves.submitGuess({ rank });
+    clients[0].moves.voteGuess({ rank });
+    expect(G(clients[0]).phase).toBe('guess'); // un seul vote : on attend l'autre
+    clients[1].moves.voteGuess({ rank });
     const g = G(clients[0]);
     expect(g.phase).toBe('reveal');
     expect(g.result.guess.correct).toBe(true);
@@ -107,7 +112,7 @@ describe('cartes Effraction', () => {
     for (let r = 0; r < 4; r++) takeRound(clients);
     const ranks = G(clients[2]).hands['2'].map((c) => c.rank);
     const wrong = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].find((r) => !ranks.includes(r));
-    clients[1].moves.submitGuess({ rank: wrong });
+    voteAll(clients, { rank: wrong });
     const g = G(clients[0]);
     expect(g.result.success).toBe(false);
     expect(g.vaults.alarm).toBe(1);
@@ -118,8 +123,37 @@ describe('cartes Effraction', () => {
     for (let r = 0; r < 4; r++) takeRound(clients);
     const g0 = G(clients[2]);
     const category = bestHand([...g0.hands['2'], ...g0.community]).score[0];
-    clients[0].moves.submitGuess({ category });
+    voteAll(clients, { category });
     expect(G(clients[0]).result.guess.correct).toBe(true);
+  });
+});
+
+describe('vote du contrôle de sécurité', () => {
+  it('rien n’est retenu tant que les votes diffèrent ; changer d’avis puis converger ouvre le coffre', () => {
+    const clients = play(4, { challenges: [4] });
+    for (let r = 0; r < 4; r++) takeRound(clients); // cible : joueur 3 (4★ rouge)
+    expect(G(clients[0]).guess.target).toBe('3');
+    clients[0].moves.voteGuess({ rank: 14 });
+    clients[1].moves.voteGuess({ rank: 14 });
+    clients[2].moves.voteGuess({ rank: 13 });
+    expect(G(clients[0]).phase).toBe('guess'); // désaccord
+    expect(Object.keys(G(clients[0]).guess.votes)).toHaveLength(3);
+    clients[2].moves.cancelVote();
+    expect(G(clients[0]).guess.votes['2']).toBeUndefined();
+    clients[2].moves.voteGuess({ rank: 14 });
+    const g = G(clients[0]);
+    expect(g.phase).toBe('reveal');
+    expect(g.result.guess.answer).toEqual({ rank: 14 });
+  });
+
+  it('les deux contrôles ensemble : il faut s’accorder sur la valeur ET la combinaison', () => {
+    const clients = play(3, { challenges: [4, 9] });
+    for (let r = 0; r < 4; r++) takeRound(clients);
+    clients[0].moves.voteGuess({ rank: 5, category: 1 });
+    clients[1].moves.voteGuess({ rank: 5, category: 2 });
+    expect(G(clients[0]).phase).toBe('guess');
+    clients[1].moves.voteGuess({ rank: 5, category: 1 }); // revoter remplace le vote
+    expect(G(clients[0]).phase).toBe('reveal');
   });
 });
 
@@ -238,7 +272,7 @@ describe('modes de difficulté', () => {
     expect(g.specialist).toBeNull();
     for (let r = 0; r < 4; r++) {
       takeRound(clients);
-      if (G(clients[0]).phase === 'guess') clients[0].moves.submitGuess({ rank: 2, category: 0 });
+      if (G(clients[0]).phase === 'guess') voteAll(clients, { rank: 2, category: 0 });
     }
     const after = G(clients[0]);
     expect(after.upcoming.challenges).toHaveLength(2);

@@ -187,7 +187,7 @@ function maybeAdvance(G, ctx, random) {
   if (needRank || needCategory) {
     const n = players(ctx).length;
     const target = players(ctx).find((p) => G.chips[p].red === n);
-    G.guess = { target, needRank, needCategory, answer: null };
+    G.guess = { target, needRank, needCategory, answer: null, votes: {} };
     G.phase = 'guess';
     emit(G, 'guess', { target, needRank, needCategory });
     return;
@@ -395,18 +395,44 @@ function passCard({ G, ctx, playerID }, cardIndex) {
 
 // ---------- Coups : devinettes (Effractions 4 et 9) et fin de casse ----------
 
-function submitGuess({ G, ctx, playerID, random }, { rank, category } = {}) {
+// Contrôle de sécurité (Effractions 4 et 9) : tous les joueurs sauf la cible votent.
+// La réponse n'est retenue que lorsque chacun a validé exactement le même choix.
+export function guessVoters(G, ctx) {
+  return players(ctx).filter((pid) => pid !== G.guess.target);
+}
+
+const sameVote = (a, b, guess) =>
+  (!guess.needRank || a.rank === b.rank) && (!guess.needCategory || a.category === b.category);
+
+function voteGuess({ G, ctx, playerID, random }, { rank, category } = {}) {
   if (G.phase !== 'guess' || playerID === G.guess.target) return INVALID_MOVE;
   if (G.guess.needRank && !(rank >= 2 && rank <= 14)) return INVALID_MOVE;
   if (G.guess.needCategory && !(category >= 0 && category < CATEGORY_NAMES.length)) return INVALID_MOVE;
 
+  G.guess.votes[playerID] = {
+    ...(G.guess.needRank ? { rank } : {}),
+    ...(G.guess.needCategory ? { category } : {}),
+  };
+
+  const voters = guessVoters(G, ctx);
+  const votes = voters.map((pid) => G.guess.votes[pid]);
+  if (votes.some((v) => !v)) return;
+  if (!votes.every((v) => sameVote(v, votes[0], G.guess))) return; // désaccord : on attend que l'équipe converge
+
   const target = G.guess.target;
+  const answer = votes[0];
   let correct = true;
-  if (G.guess.needRank) correct &&= G.hands[target].some((c) => c.rank === rank);
-  if (G.guess.needCategory) correct &&= bestHand([...G.hands[target], ...G.community]).score[0] === category;
-  G.guess.answer = { rank, category, by: playerID };
+  if (G.guess.needRank) correct &&= G.hands[target].some((c) => c.rank === answer.rank);
+  if (G.guess.needCategory) correct &&= bestHand([...G.hands[target], ...G.community]).score[0] === answer.category;
+  G.guess.answer = answer;
   G.guess.correct = correct;
   openVault(G, ctx, random);
+}
+
+/** Retire son vote (pour changer d'avis pendant la discussion). */
+function cancelVote({ G, playerID }) {
+  if (G.phase !== 'guess' || !G.guess.votes[playerID]) return INVALID_MOVE;
+  delete G.guess.votes[playerID];
 }
 
 function setReady({ G, playerID }, value = true) {
@@ -477,7 +503,8 @@ export const TheGang = {
     useSpecialist: { move: useSpecialist, client: false },
     discardCard: { move: discardCard, client: false },
     passCard: { move: passCard, client: false },
-    submitGuess: { move: submitGuess, client: false },
+    voteGuess: { move: voteGuess, client: false },
+    cancelVote: { move: cancelVote, client: false },
     setReady: { move: setReady, client: false },
   },
 

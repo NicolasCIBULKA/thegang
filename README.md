@@ -87,7 +87,8 @@ server/index.js    serveur boardgame.io (+ fichiers statiques en production)
 Toutes sont gérées automatiquement : tours sautés (1, 5), jetons sombres impossibles à voler ou rendre (2, 6),
 repioches selon le flop (3, 7), jetons des tours précédents cachés (8), 3 cartes en main (10).
 Pour le Scan rétinien (4) et le Lecteur d'empreintes (9), une étape « Contrôle de sécurité » apparaît avant l'abattage :
-l'équipe se met d'accord, puis un joueur (pas la cible) valide la réponse.
+chaque joueur sauf la cible vote, voit les votes des autres et peut changer d'avis ; la réponse n'est retenue que
+lorsque tous les votes validés sont identiques.
 
 ### Cartes Complice
 

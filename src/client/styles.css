@@ -871,3 +871,19 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
 .post-room .leave-btn { align-self: center; margin-top: 4px; }
 
 .app-version { margin: 28px 0 0; text-align: center; font-size: 11px; letter-spacing: 0.08em; color: var(--faint); opacity: 0.7; }
+
+/* Contrôle de sécurité : votes de l'équipe */
+.guess-buttons { display: flex; gap: 8px; justify-content: center; }
+.guess-panel .btn:not(.primary) { color: var(--velvet); border-color: var(--velvet); }
+.vote-list { list-style: none; margin: 4px 0 0; padding: 0; width: 100%; display: grid; gap: 4px; }
+.vote-list li {
+  display: flex; justify-content: space-between; gap: 12px; padding: 4px 10px; border-radius: 6px;
+  background: rgba(43, 26, 18, 0.06); font-size: 15px;
+}
+.vote-list li.voted { background: rgba(106, 16, 32, 0.12); }
+.vote-name { font-weight: 700; }
+.vote-value { font-style: italic; color: #6b5640; }
+.vote-list li.voted .vote-value { font-style: normal; font-weight: 700; color: var(--velvet); }
+.vote-status { margin: 0; font-size: 15px; font-style: italic; }
+.vote-status.ko { color: var(--velvet); font-weight: 700; font-style: normal; }
+@media (max-width: 720px) { .vote-list li { font-size: 14px; } }

@@ -302,7 +302,9 @@ export default function Board(props) {
                 </div>
               )}
 
-              {G.phase === 'guess' && !over && <GuessPanel G={G} playerID={playerID} names={names} moves={moves} />}
+              {G.phase === 'guess' && !over && (
+                <GuessPanel G={G} ctx={ctx} playerID={playerID} names={names} moves={moves} />
+              )}
               {reveal && <RevealPanel G={G} names={names} />}
               {over && (
                 <GameOver gameover={ctx.gameover} roomIn={gameOver ? roomIn : null} onRoom={() => setRoomIn(0)} />
