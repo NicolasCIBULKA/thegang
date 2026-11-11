@@ -899,3 +899,5 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
 .credits a { color: var(--gold-hi); text-decoration: none; border-bottom: 1px solid rgba(230, 194, 113, 0.4); }
 .credits a:hover { border-bottom-color: var(--gold-hi); }
 .credits .app-version { margin-top: 8px; }
+.credits-original { font-size: 15px; font-style: italic; margin-bottom: 10px !important; }
+.credits-original em { font-style: normal; color: var(--text); }

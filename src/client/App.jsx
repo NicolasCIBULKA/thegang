@@ -284,6 +284,13 @@ function Lobby({ initialCode, onSeated }) {
       {error && <p className="error">{error}</p>}
 
       <footer className="credits">
+        <p className="credits-original">
+          <em>The Gang</em> est un jeu de John Cooper et Kory Heath, édité par{' '}
+          <a href="https://www.kosmos.de/en/products/the-gang" target="_blank" rel="noopener noreferrer">
+            KOSMOS
+          </a>
+          . Cette version en ligne est un projet de fan non officiel.
+        </p>
         <p>
           Created by <strong>Nicolas CIBULKA</strong>
         </p>
