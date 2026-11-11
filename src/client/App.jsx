@@ -292,7 +292,7 @@ function Lobby({ initialCode, onSeated }) {
           . Cette version en ligne est un projet de fan non officiel.
         </p>
         <p>
-          Created by <strong>Nicolas CIBULKA</strong>
+          Créé par <strong>Nicolas CIBULKA</strong>
         </p>
         <p className="credits-links">
           <a href="mailto:nico.cibulka@gmail.com">nico.cibulka@gmail.com</a>

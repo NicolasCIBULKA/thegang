@@ -85,3 +85,55 @@ export function handCategory(cards) {
   if (sizes[0] === 2) return 1;
   return 0;
 }
+
+// ---------- Description lisible de la combinaison (affichage pendant la partie) ----------
+
+const RANK_PLURAL = { 11: 'valets', 12: 'dames', 13: 'rois', 14: 'As' };
+const RANK_SINGULAR = { 11: 'valet', 12: 'dame', 13: 'roi', 14: 'As' };
+const SUIT_NAMES = { S: 'pique', H: 'cœur', D: 'carreau', C: 'trèfle' };
+const plural = (r) => RANK_PLURAL[r] || String(r);
+const single = (r) => RANK_SINGULAR[r] || String(r);
+const de = (word) => (/^[aeiouyâàéèêAEIOUY]/.test(word) ? `d’${word}` : `de ${word}`);
+
+/**
+ * Combinaison actuelle d'un ensemble de 2 à 7 cartes.
+ * Renvoie { category, name, label, core } : `core` = les cartes qui forment la combinaison
+ * (sans les cartes d'appoint), pour les mettre en valeur.
+ */
+export function describeHand(cards) {
+  if (!cards?.length) return null;
+  const pool = cards.length >= 5 ? bestHand(cards).cards : cards;
+  const category = cards.length >= 5 ? bestHand(cards).score[0] : handCategory(cards);
+
+  const counts = new Map();
+  for (const c of pool) counts.set(c.rank, (counts.get(c.rank) || 0) + 1);
+  const groups = [...counts.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+  const high = [...pool].sort((a, b) => b.rank - a.rank)[0];
+
+  let core;
+  if ([4, 5, 8].includes(category)) core = pool;
+  else if (category === 0) core = [high];
+  else {
+    const ranks = new Set(groups.map(([r]) => r));
+    core = pool.filter((c) => ranks.has(c.rank));
+  }
+
+  // Hauteur d'une quinte (la quinte blanche A-2-3-4-5 est « au 5 »)
+  const straightHigh = () => {
+    const rs = [...new Set(pool.map((c) => c.rank))].sort((a, b) => b - a);
+    return rs[0] === 14 && rs[1] === 5 ? 5 : rs[0];
+  };
+  const [g1, g2] = groups.map(([r]) => r);
+  const labels = {
+    0: () => `Carte haute : ${single(high.rank)}`,
+    1: () => `Paire ${de(plural(g1))}`,
+    2: () => `Double paire : ${plural(g1)} et ${plural(g2)}`,
+    3: () => `Brelan ${de(plural(g1))}`,
+    4: () => `Quinte, hauteur ${single(straightHigh())}`,
+    5: () => `Couleur à ${SUIT_NAMES[pool[0].suit] || 'la même couleur'}`,
+    6: () => `Full aux ${plural(g1)} par les ${plural(g2)}`,
+    7: () => `Carré ${de(plural(g1))}`,
+    8: () => `Quinte flush, hauteur ${single(straightHigh())}`,
+  };
+  return { category, name: CATEGORY_NAMES[category], label: labels[category](), core };
+}

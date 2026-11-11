@@ -9,7 +9,7 @@ const cardKey = (card) => (card ? `${card.rank}${card.suit}` : 'back');
  * Carte animée : chaque nouvelle carte (nouvelle clé React) glisse sur la table puis se retourne.
  * `delay` (en ms) échelonne les animations, ex. les 3 cartes du flop.
  */
-export function Card({ card, small, highlight, delay = 0, onClick, selected, title }) {
+export function Card({ card, small, highlight, glow, delay = 0, onClick, selected, title }) {
   const style = { '--deal-delay': `${delay}ms` };
   const Tag = onClick ? 'button' : 'div';
   const base = `card ${small ? 'small' : ''} ${onClick ? 'clickable' : ''} ${selected ? 'selected' : ''}`;
@@ -18,7 +18,7 @@ export function Card({ card, small, highlight, delay = 0, onClick, selected, tit
   const special = card.suit === 'X';
   return (
     <Tag
-      className={`${base} deal-flip ${red ? 'red' : ''} ${special ? 'special' : ''} ${highlight ? 'hl' : ''}`}
+      className={`${base} deal-flip ${red ? 'red' : ''} ${special ? 'special' : ''} ${highlight ? 'hl' : ''} ${glow ? 'glow' : ''}`}
       style={style}
       onClick={onClick}
       title={title}
@@ -30,7 +30,17 @@ export function Card({ card, small, highlight, delay = 0, onClick, selected, tit
 }
 
 /** Rangée de cartes ; la clé suit l'identité de la carte pour rejouer l'animation quand elle change. */
-export function CardRow({ cards, small, stagger = 120, baseDelay = 0, highlight, onPick, title, keyPrefix = '' }) {
+export function CardRow({
+  cards,
+  small,
+  stagger = 120,
+  baseDelay = 0,
+  highlight,
+  glow,
+  onPick,
+  title,
+  keyPrefix = '',
+}) {
   return cards.map((c, i) => (
     <Card
       key={`${keyPrefix}-${c ? cardKey(c) : `back-${i}`}`}
@@ -38,6 +48,7 @@ export function CardRow({ cards, small, stagger = 120, baseDelay = 0, highlight,
       small={small}
       delay={baseDelay + i * stagger}
       highlight={highlight?.(c)}
+      glow={glow?.(c)}
       onClick={onPick ? () => onPick(i) : undefined}
       title={title}
     />

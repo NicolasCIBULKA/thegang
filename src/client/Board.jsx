@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ROUNDS, WINS_NEEDED, isDarkChip } from '../game/game.js';
 import { MODES } from '../game/specialCards.js';
 import { Card, CardRow, Chip } from './parts.jsx';
+import { describeHand } from '../game/handEval.js';
 import { ActiveCards, GuessPanel, GuessResult, Feed, Upcoming } from './Specials.jsx';
 import Mastermind from './Mastermind.jsx';
 import MatchSettings from './MatchSettings.jsx';
@@ -163,6 +164,10 @@ export default function Board(props) {
   const myHand = G.hands[playerID] || [];
   const leftNeighbor = ctx.playOrder[(ctx.playOrder.indexOf(playerID) + 1) % n];
 
+  // Ma combinaison actuelle (mes cartes + cartes communes visibles), mise en valeur pendant le casse
+  const myCombo = !reveal && myHand.length ? describeHand([...myHand, ...G.community]) : null;
+  const inCombo = (c) => !!c && !!myCombo?.core.some((k) => k.rank === c.rank && k.suit === c.suit);
+
   // Actions sur mes cartes : défausse (Hackeuse / Valet) ou passe (Coordinateur)
   let cardAction = null;
   if (pendingDiscard) {
@@ -261,7 +266,12 @@ export default function Board(props) {
                   const firstNew = ROUNDS[G.round].community - (G.round === 1 ? 3 : 1);
                   const delay = card ? Math.max(0, i - firstNew) * 180 : 0;
                   return (
-                    <Card key={`${G.heist}-${i}-${card ? card.rank + card.suit : 'empty'}`} card={card} delay={delay} />
+                    <Card
+                      key={`${G.heist}-${i}-${card ? card.rank + card.suit : 'empty'}`}
+                      card={card}
+                      delay={delay}
+                      glow={inCombo(card)}
+                    />
                   );
                 })}
               </div>
@@ -322,6 +332,7 @@ export default function Board(props) {
               cards={myHand}
               stagger={150}
               keyPrefix={G.heist}
+              glow={inCombo}
               onPick={cardAction?.onPick}
               title={cardAction ? (pendingDiscard ? 'Défausser cette carte' : 'Passer cette carte') : undefined}
             />
@@ -332,6 +343,12 @@ export default function Board(props) {
           <div className="me-name">
             {names[playerID]} (vous){G.muscle === playerID && <span className="pill complice">Gros bras</span>}
           </div>
+          {myCombo && (
+            <div className="me-combo" aria-live="polite">
+              <span className="me-combo-k">Votre combinaison</span>
+              <span className="me-combo-v">{myCombo.label}</span>
+            </div>
+          )}
           <ChipHistory chips={G.chips[playerID]} upTo={reveal ? 4 : G.round} />
           {bidding && (
             <div className="me-current">

@@ -178,3 +178,27 @@ describe('événements pour le cerveau', () => {
     expect(ev().type).toBe('vault');
   });
 });
+
+describe('description de la combinaison affichée', async () => {
+  const { describeHand } = await import('./handEval.js');
+  const c = (s) => ({ rank: { A: 14, K: 13, Q: 12, J: 11, T: 10 }[s[0]] ?? Number(s[0]), suit: s[1] });
+  const cs = (str) => str.split(' ').map(c);
+  const cases = [
+    ['AH 9C', 'Carte haute : As', 1],
+    ['KH KS', 'Paire de rois', 2],
+    ['AH AS 2C 7D 9H', 'Paire d’As', 2],
+    ['KH KS 9C 9D 2H 3S 4C', 'Double paire : rois et 9', 4],
+    ['7H 7S 7D 2C 9H', 'Brelan de 7', 3],
+    ['AH 2S 3D 4C 5H 9D KC', 'Quinte, hauteur 5', 5],
+    ['2H 7H 9H JH KH 3D 4C', 'Couleur à cœur', 5],
+    ['QH QS QD 4C 4H 2D', 'Full aux dames par les 4', 5],
+    ['9H 9S 9D 9C 2H', 'Carré de 9', 4],
+  ];
+  for (const [hand, label, core] of cases) {
+    it(`${hand} → ${label}`, () => {
+      const d = describeHand(cs(hand));
+      expect(d.label).toBe(label);
+      expect(d.core).toHaveLength(core);
+    });
+  }
+});
