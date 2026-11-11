@@ -5,6 +5,7 @@ import { Card, CardRow, Chip } from './parts.jsx';
 import { ActiveCards, GuessPanel, GuessResult, Feed, Upcoming } from './Specials.jsx';
 import Mastermind from './Mastermind.jsx';
 import MatchSettings from './MatchSettings.jsx';
+import PostGameRoom from './PostGameRoom.jsx';
 
 // ---------- Petits composants ----------
 
@@ -106,10 +107,33 @@ export default function Board(props) {
     : props.moves;
   // Téléphone : les cartes actives et le registre sont rangés dans un panneau qu'on ouvre à la demande.
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Fin de partie en ligne : on laisse le dernier abattage affiché quelques secondes, puis retour au salon.
+  const ROOM_DELAY = 8;
+  const gameOver = !!props.ctx.gameover && !!props.room;
+  const [roomIn, setRoomIn] = useState(null); // secondes restantes avant le salon ; 0 = dans le salon
+  useEffect(() => {
+    if (!gameOver) return undefined;
+    setRoomIn((v) => (v == null ? ROOM_DELAY : v));
+    const id = setInterval(() => setRoomIn((v) => (v > 0 ? v - 1 : 0)), 1000);
+    return () => clearInterval(id);
+  }, [gameOver]);
   // En mode solo (sans serveur), boardgame.io ne fournit pas matchData : SoloMode passe soloPlayers.
   const matchData = props.soloPlayers || props.matchData || [];
   const names = Object.fromEntries(matchData.map((p) => [String(p.id), p.name || `Joueur ${p.id + 1}`]));
   const allSeated = matchData.length > 0 && matchData.every((p) => p.name);
+
+  if (gameOver && roomIn === 0) {
+    return (
+      <PostGameRoom
+        G={G}
+        ctx={ctx}
+        playerID={playerID}
+        matchData={matchData}
+        room={props.room}
+        onLeave={props.onLeave}
+      />
+    );
+  }
 
   if (!allSeated)
     return (
@@ -280,7 +304,9 @@ export default function Board(props) {
 
               {G.phase === 'guess' && !over && <GuessPanel G={G} playerID={playerID} names={names} moves={moves} />}
               {reveal && <RevealPanel G={G} names={names} />}
-              {over && <GameOver gameover={ctx.gameover} />}
+              {over && (
+                <GameOver gameover={ctx.gameover} roomIn={gameOver ? roomIn : null} onRoom={() => setRoomIn(0)} />
+              )}
             </div>
           </section>
         </div>
@@ -461,13 +487,19 @@ function RevealPanel({ G, names }) {
   );
 }
 
-function GameOver({ gameover }) {
+function GameOver({ gameover, roomIn, onRoom }) {
   return (
     <div className={`gameover ${gameover.winner ? 'win' : 'lose'}`}>
       <h2>{gameover.winner ? 'Le gang a réussi son coup !' : 'Le gang s’est fait prendre…'}</h2>
-      <a className="btn primary" href={window.location.pathname}>
-        Nouvelle partie
-      </a>
+      {roomIn != null ? (
+        <button className="btn primary" onClick={onRoom}>
+          Retour au salon{roomIn > 0 ? ` (${roomIn} s)` : ''}
+        </button>
+      ) : (
+        <a className="btn primary" href={window.location.pathname}>
+          Nouvelle partie
+        </a>
+      )}
     </div>
   );
 }

@@ -47,3 +47,46 @@ export default function MatchSettings({ mode, numPlayers, seated, extensions = [
     </dl>
   );
 }
+
+/** Choix du nombre de joueurs et de la difficulté (menu « Nouvelle partie » et salon d'après-partie). */
+export function SettingsForm({ mode, setMode, numPlayers, setNumPlayers }) {
+  return (
+    <>
+      <div className="field">
+        <span id="settings-players">Nombre de joueurs</span>
+        <div className="seg" role="group" aria-labelledby="settings-players">
+          {[3, 4, 5, 6].map((n) => (
+            <button
+              type="button"
+              key={n}
+              className={n === numPlayers ? 'on' : ''}
+              aria-pressed={n === numPlayers}
+              onClick={() => setNumPlayers(n)}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="field">
+        <span id="settings-mode">Difficulté</span>
+        <div className="mode-list" role="group" aria-labelledby="settings-mode">
+          {Object.entries(MODES).map(([key, m]) => (
+            <button
+              type="button"
+              key={key}
+              className={`mode-option ${key === mode ? 'on' : ''}`}
+              aria-pressed={key === mode}
+              onClick={() => setMode(key)}
+            >
+              <span>
+                <strong>{m.label}</strong>
+                <small>{m.text}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}

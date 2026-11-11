@@ -844,3 +844,28 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: 0.12
   75% { transform: translateX(4px); }
 }
 @media (prefers-reduced-motion: reduce) { .mm-nudge { animation: none; } }
+
+/* ==========================================================================
+   Salon d'après-partie
+   ========================================================================== */
+.post-room {
+  max-width: 640px; margin: 0 auto; padding: 32px 16px 40px;
+  display: flex; flex-direction: column; gap: 18px; align-items: stretch;
+}
+.post-result { text-align: center; }
+.post-result h2 { margin: 0; font-size: clamp(22px, 4vw, 30px); letter-spacing: 0.18em; text-transform: uppercase; }
+.post-result.win h2 { color: var(--gold-hi); text-shadow: 0 0 18px rgba(230, 194, 113, 0.45); }
+.post-result.lose h2 { color: #ff8a7e; }
+.post-result p { margin: 6px 0 0; font-family: var(--serif); font-style: italic; font-size: 18px; color: var(--muted); }
+.post-panel {
+  background: rgba(20, 8, 6, 0.55); border: 1px solid rgba(201, 162, 74, 0.45);
+  border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;
+}
+.post-panel h3 { margin: 0 0 8px; font-size: 16px; color: var(--gold); }
+.post-panel .seat-list { margin: 0; }
+.post-panel .seat-list li { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.post-panel .btn.primary { align-self: flex-start; }
+.post-you { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--muted); }
+.post-wait { margin: 0 0 6px; font-family: var(--serif); font-size: 17px; }
+.post-warn { margin: -4px 0 10px; font-family: var(--serif); font-style: italic; font-size: 15px; color: #f2b9b9; }
+.post-room .leave-btn { align-self: center; margin-top: 4px; }

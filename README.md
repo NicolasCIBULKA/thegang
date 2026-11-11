@@ -12,6 +12,13 @@ npm run dev        # serveur (port 8000) + client Vite (port 5173)
 
 Ouvrez http://localhost:5173, créez un salon, puis partagez le lien d'invitation.
 
+### Rejouer
+
+À la fin d'une partie en ligne, le dernier abattage reste affiché 8 secondes (ou jusqu'au clic sur « Retour au salon »),
+puis chacun revient au salon : résultat, joueurs présents, paramètres. L'hôte (le créateur du salon, ou n'importe qui
+s'il est parti) choisit la difficulté et le nombre de joueurs puis relance ; boardgame.io crée la partie suivante
+(`playAgain`) et les autres joueurs la rejoignent automatiquement avec leur pseudo.
+
 ### Tutoriel
 
 Le menu propose « Apprendre à jouer » (`?tuto`) : une partie guidée à 3 avec une donne choisie à l'avance,

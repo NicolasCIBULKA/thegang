@@ -7,7 +7,7 @@ import Board from './Board.jsx';
 import SoloMode from './SoloMode.jsx';
 import TutorialMode from './TutorialMode.jsx';
 import { MODES } from '../game/specialCards.js';
-import MatchSettings from './MatchSettings.jsx';
+import MatchSettings, { SettingsForm } from './MatchSettings.jsx';
 
 // En dev, le serveur tourne à part sur le port 8000 ; en prod il sert aussi le client.
 export const SERVER = import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin;
@@ -92,9 +92,33 @@ export default function App() {
     setSeat(null);
   }
 
+  // Après une partie : l'hôte crée la suivante avec ses paramètres, chacun y rejoint avec son pseudo.
+  const room = seat && {
+    getMatch: () => lobby.getMatch('the-gang', seat.matchID),
+    playAgain: ({ mode, numPlayers }) =>
+      lobby
+        .playAgain('the-gang', seat.matchID, {
+          playerID: seat.playerID,
+          credentials: seat.credentials,
+          numPlayers,
+          setupData: { mode, extensions: [] },
+        })
+        .then((r) => r.nextMatchID),
+    joinNext: async (nextMatchID, playerName) => {
+      const { playerID, playerCredentials } = await lobby.joinMatch('the-gang', nextMatchID, { playerName });
+      const next = { matchID: nextMatchID, playerID, credentials: playerCredentials };
+      removeSeat(seat.matchID);
+      saveSeat(nextMatchID, next);
+      setUrlMatch(nextMatchID);
+      setSeat(next);
+    },
+  };
+
   if (seat) {
     return (
       <GangClient
+        key={seat.matchID}
+        room={room}
         matchID={seat.matchID}
         playerID={seat.playerID}
         credentials={seat.credentials}
@@ -219,34 +243,7 @@ function Lobby({ initialCode, onSeated }) {
       <div className="lobby-panels">
         <form className="panel" onSubmit={handleCreate}>
           <h2>Nouvelle partie</h2>
-          <label className="field">
-            <span>Nombre de joueurs</span>
-            <div className="seg">
-              {[3, 4, 5, 6].map((n) => (
-                <button type="button" key={n} className={n === numPlayers ? 'on' : ''} onClick={() => setNumPlayers(n)}>
-                  {n}
-                </button>
-              ))}
-            </div>
-          </label>
-          <div className="field">
-            <span>Difficulté</span>
-            <div className="mode-list">
-              {Object.entries(MODES).map(([key, m]) => (
-                <button
-                  type="button"
-                  key={key}
-                  className={`mode-option ${key === mode ? 'on' : ''}`}
-                  onClick={() => setMode(key)}
-                >
-                  <span>
-                    <strong>{m.label}</strong>
-                    <small>{m.text}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <SettingsForm mode={mode} setMode={setMode} numPlayers={numPlayers} setNumPlayers={setNumPlayers} />
           <button className="btn primary" disabled={!canSubmit}>
             Créer le salon
           </button>
