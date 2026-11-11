@@ -283,7 +283,19 @@ function Lobby({ initialCode, onSeated }) {
 
       {error && <p className="error">{error}</p>}
 
-      <p className="app-version">version {(import.meta.env.VITE_APP_VERSION || 'dev').slice(0, 7)}</p>
+      <footer className="credits">
+        <p>
+          Created by <strong>Nicolas CIBULKA</strong>
+        </p>
+        <p className="credits-links">
+          <a href="mailto:nico.cibulka@gmail.com">nico.cibulka@gmail.com</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://www.linkedin.com/in/nicolas-cibulka-642143194/" target="_blank" rel="noopener noreferrer">
+            LinkedIn
+          </a>
+        </p>
+        <p className="app-version">version {(import.meta.env.VITE_APP_VERSION || 'dev').slice(0, 7)}</p>
+      </footer>
 
       {/* Lien vers le mode solo : affiché seulement en développement (npm run dev), pas sur le site déployé. */}
       {import.meta.env.DEV && (
