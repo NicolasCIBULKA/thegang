@@ -72,7 +72,17 @@ server.app.use(async (ctx, next) => {
 });
 
 // Le serveur sert le client compilé (dist/), y compris s'il n'est créé qu'après le démarrage.
-server.app.use(serve(DIST));
+// index.html n'est jamais mis en cache (sinon un navigateur ou un CDN garde l'ancienne version après un
+// déploiement) ; les fichiers de assets/ ont un nom qui change à chaque build, ils peuvent l'être longtemps.
+server.app.use(
+  serve(DIST, {
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      else if (filePath.includes(`${path.sep}assets${path.sep}`))
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    },
+  }),
+);
 
 server.run(PORT, async () => {
   console.log(`Serveur The Gang sur le port ${PORT}`);

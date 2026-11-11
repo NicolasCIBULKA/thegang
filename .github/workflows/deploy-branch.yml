@@ -33,6 +33,7 @@ jobs:
       - run: npm run build
         env:
           VITE_SOCKET_TRANSPORTS: polling
+          VITE_APP_VERSION: ${{ github.sha }}
 
       - name: Publier la branche deploy
         run: |
