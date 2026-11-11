@@ -288,6 +288,10 @@ function Lobby({ initialCode, onSeated }) {
           <em>The Gang</em> est un jeu de John Cooper et Kory Heath, édité par{' '}
           <a href="https://www.kosmos.de/en/products/the-gang" target="_blank" rel="noopener noreferrer">
             KOSMOS
+          </a>{' '}
+          et publié en France par{' '}
+          <a href="https://iello.fr/jeux/the-gang/" target="_blank" rel="noopener noreferrer">
+            IELLO
           </a>
           . Cette version en ligne est un projet de fan non officiel.
         </p>

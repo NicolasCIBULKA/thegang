@@ -164,5 +164,5 @@ PUBLIC_URL=https://votre-domaine.example npm start
 
 ## Note
 
-*The Gang* est un jeu de John Cooper et Kory Heath, publié par Kosmos. Ce projet n'utilise ni leurs illustrations ni leurs textes.
+*The Gang* est un jeu de John Cooper et Kory Heath, édité par Kosmos et publié en France par Iello. Ce projet n'utilise ni leurs illustrations ni leurs textes.
 Pour un usage public, prévoyez un autre nom.
