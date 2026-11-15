@@ -4,6 +4,7 @@ import { Client as HeadlessClient } from 'boardgame.io/client';
 import { Local } from 'boardgame.io/multiplayer';
 import { TheGang, createSetup } from '../game/game.js';
 import Board from './Board.jsx';
+import { track } from './track.js';
 
 // ---------------------------------------------------------------------------
 // Tutoriel : une partie à 3 avec une donne choisie pour illustrer chaque règle.
@@ -134,6 +135,10 @@ export default function TutorialMode() {
   useEffect(() => setNudge(null), [stepIndex]);
   const step = STEPS[stepIndex];
   const timers = useRef([]);
+  useEffect(() => track('tutorial'), []);
+  useEffect(() => {
+    if (step.last) track('tutorial_done');
+  }, [step.last]);
 
   // Les bots suivent l'état de la partie (les jetons sont publics, leurs cartes privées).
   useEffect(() => {

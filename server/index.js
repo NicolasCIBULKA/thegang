@@ -9,6 +9,8 @@ const require = createRequire(import.meta.url);
 const { Server, Origins, FlatFile } = require('boardgame.io/server');
 import serve from 'koa-static';
 import { TheGang } from '../src/game/game.js';
+import { createAnalytics, withGameTracking } from './analytics.js';
+import { adminMiddleware } from './admin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 8000;
@@ -29,15 +31,27 @@ class DurableFlatFile extends FlatFile {
   }
 }
 
+const DATA_DIR = process.env.DATA_DIR
+  ? process.env.DATA_DIR.replace(/^~(?=$|\/)/, os.homedir())
+  : path.resolve(__dirname, '../data');
+
 let db;
 if (process.env.DATA_DIR) {
-  const dir = process.env.DATA_DIR.replace(/^~(?=$|\/)/, os.homedir());
+  const dir = DATA_DIR;
   fs.mkdirSync(dir, { recursive: true });
   db = new DurableFlatFile({ dir, logging: false });
   console.log(`Parties sauvegardées dans ${dir}`);
 }
 
 const server = Server({ games: [TheGang], origins, ...(db ? { db } : {}) });
+// Derrière le proxy de l'hébergeur : fait confiance à X-Forwarded-* (HTTPS, adresse du visiteur).
+server.app.proxy = true;
+
+// Suivi d'utilisation (anonyme) et espace d'administration /admin
+const analytics = createAnalytics(DATA_DIR);
+withGameTracking(server.db, analytics);
+server.app.use(adminMiddleware({ analytics, gameName: TheGang.name }));
+if (!process.env.ADMIN_PASSWORD_HASH) console.log('Administration désactivée : ADMIN_EMAIL / ADMIN_PASSWORD_HASH non définis.');
 
 // Certains hébergeurs (préréglage « Express » d'Hostinger) lancent directement ce fichier sans exécuter
 // « npm run build ». Dans ce cas on compile l'interface ici, APRÈS avoir ouvert le port : l'hébergeur voit

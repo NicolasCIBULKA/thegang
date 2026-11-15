@@ -305,7 +305,9 @@ function Lobby({ initialCode, onSeated }) {
             LinkedIn
           </a>
         </p>
-        <p className="app-version">version {(import.meta.env.VITE_APP_VERSION || 'dev').slice(0, 7)}</p>
+        <p className="app-version">
+          version {(import.meta.env.VITE_APP_VERSION || 'dev').slice(0, 7)} · <a href="/admin">Administration</a>
+        </p>
       </footer>
 
       {/* Lien vers le mode solo : affiché seulement en développement (npm run dev), pas sur le site déployé. */}

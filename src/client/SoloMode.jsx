@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Client } from 'boardgame.io/react';
 import { Local } from 'boardgame.io/multiplayer';
 import { TheGang, createSetup } from '../game/game.js';
 import Board from './Board.jsx';
+import { track } from './track.js';
 
 // Mode solo : toute la partie tourne dans le navigateur (pas de serveur),
 // et on bascule d'un joueur à l'autre pour tester les règles et l'interface.
@@ -10,6 +11,7 @@ import Board from './Board.jsx';
 const NAMES = ['Alice', 'Bob', 'Chloé', 'David', 'Emma', 'Farid'];
 
 export default function SoloMode({ numPlayers, mode = 'basique', forced = null }) {
+  useEffect(() => track('solo'), []);
   const n = Math.min(6, Math.max(3, numPlayers || 4));
   const [active, setActive] = useState('0');
 

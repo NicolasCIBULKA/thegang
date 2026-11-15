@@ -114,6 +114,19 @@ Pas encore implémentés : chat intégré (prévu pour jouer en appel vocal), va
 - **Vue téléphone** (≤ 720 px de large) : cerveau en bandeau, adversaires dans une bande qui défile horizontalement,
   main et bouton d'action en bas, cartes actives et registre dans un panneau « Cartes & registre » qui monte du bas.
 
+## Suivi d'utilisation (/admin)
+
+Tableau de bord protégé par e-mail et mot de passe : visiteurs uniques, parties créées et terminées, casses,
+taux de victoire, tutoriels, répartition par difficulté et par nombre de joueurs, graphiques quotidiens.
+
+- Suivi **anonyme** et sans service externe : un identifiant aléatoire par navigateur pour compter les visiteurs,
+  aucun pseudo ni adresse IP enregistrés. Les événements sont ajoutés à `DATA_DIR/events.jsonl` (ou `data/`).
+- Identifiants dans les variables d'environnement du serveur, jamais dans le code :
+  - `ADMIN_EMAIL` : adresse de connexion ;
+  - `ADMIN_PASSWORD_HASH` : empreinte du mot de passe, générée avec `npm run admin:password -- 'mot de passe'`.
+- Session de 7 jours (cookie signé, HttpOnly) ; changer le mot de passe déconnecte toutes les sessions ;
+  8 tentatives de connexion par quart d'heure au plus.
+
 ## Déploiement
 
 ### Gratuit, depuis GitHub : Render

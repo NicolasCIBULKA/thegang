@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
+import { trackVisit } from './track.js';
 // Polices embarquées (pas de dépendance à Google Fonts)
 import '@fontsource/cinzel/500.css';
 import '@fontsource/cinzel/700.css';
@@ -14,4 +15,5 @@ import '@fontsource/inter/600.css';
 import '@fontsource/inter/700.css';
 import './styles.css';
 
+trackVisit();
 createRoot(document.getElementById('root')).render(<App />);
